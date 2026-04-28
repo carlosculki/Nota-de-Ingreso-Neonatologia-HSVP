@@ -1,0 +1,7 @@
+# No subir datos de pacientes ni backups
+*.bak
+*.tmp
+*_backup*
+node_modules/
+.DS_Store
+Thumbs.db
