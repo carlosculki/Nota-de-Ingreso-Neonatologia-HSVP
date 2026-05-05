@@ -1,0 +1,2016 @@
+        return String.fromCharCode(0xFEFF) + header + String.fromCharCode(10) + rows.join(String.fromCharCode(10));<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HC Neonatología v30.0 - HSVP</title>
+    <style>
+        :root {
+            --primary: #1a3a5c;
+            --secondary: #2980b9;
+            --accent: #27ae60;
+            --bg: #eaf2fb;
+            --danger: #c0392b;
+            --warn: #e67e22;
+            --gold: #f39c12;
+            --light: #d6eaf8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); padding: 10px; font-size: 11px; color: #222; }
+
+        /* ── DISCLAIMER MODAL ── */
+        #disclaimerModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        #disclaimerBox {
+            background: white; max-width: 680px; width: 95%; border-radius: 12px;
+            border-top: 8px solid var(--danger); padding: 30px; max-height: 90vh; overflow-y: auto;
+        }
+        #disclaimerBox h2 { color: var(--danger); margin-bottom: 12px; font-size: 15px; }
+        #disclaimerBox h3 { color: var(--primary); margin: 14px 0 6px; font-size: 12px; }
+        #disclaimerBox p, #disclaimerBox li { font-size: 11px; line-height: 1.7; color: #333; }
+        #disclaimerBox ul { padding-left: 18px; margin-bottom: 8px; }
+        #btnAceptar {
+            margin-top: 20px; width: 100%; padding: 14px;
+            background: var(--accent); color: white; border: none; border-radius: 8px;
+            font-size: 13px; font-weight: bold; cursor: pointer;
+        }
+        #btnAceptar:hover { background: #219a52; }
+        .disclaimer-footer { font-size: 10px; color: #888; text-align: center; margin-top: 10px; }
+
+        /* ── CONTAINER ── */
+        .container {
+            max-width: 1450px; margin: auto; background: white;
+            padding: 28px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            border-top: 10px solid var(--primary);
+        }
+        h1 { text-align: center; color: var(--primary); border-bottom: 4px solid var(--secondary); padding-bottom: 10px; margin-bottom: 4px; font-size: 18px; }
+        .version-badge { text-align: center; color: #888; font-size: 10px; margin-bottom: 18px; }
+        h2 { background: var(--primary); color: white; padding: 9px 12px; border-radius: 5px; margin-top: 24px; font-size: 12px; border-left: 8px solid var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        h3 { color: var(--secondary); border-bottom: 2px solid var(--light); margin-top: 18px; font-size: 11px; padding-bottom: 4px; font-weight: 700; }
+        h4 { color: var(--primary); margin: 10px 0 6px; font-size: 11px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 12px; }
+        .field { display: flex; flex-direction: column; gap: 3px; }
+        .field label { font-size: 10px; color: #555; font-weight: 600; }
+        .full-width { grid-column: 1 / -1; }
+        input, select, textarea {
+            padding: 7px 8px; border: 1px solid #bbb; border-radius: 4px;
+            font-size: 11px; background: #fff; font-family: inherit; width: 100%;
+        }
+        input:focus, select:focus, textarea:focus { outline: 2px solid var(--secondary); border-color: var(--secondary); }
+        textarea { resize: vertical; }
+        .calc-card { background: #f0f6fc; border: 1.5px solid #aed4f5; padding: 14px; border-radius: 10px; margin-bottom: 12px; }
+        .inmu-item { display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 8px; border-radius: 4px; border: 1px solid #ddd; }
+        .highlight-box { border: 2px solid var(--secondary) !important; background: #eaf4ff !important; font-weight: bold; text-align: center; color: var(--primary); }
+        .score-box { background: #fff; padding: 7px 8px; border: 1px dotted #aaa; border-radius: 4px; margin-bottom: 4px; }
+        .ef-row { display: grid; grid-template-columns: 190px 1fr; gap: 8px; align-items: center; background: #fff; padding: 5px 8px; border-bottom: 1px solid #eef; }
+        .ef-row b { color: var(--primary); font-size: 10px; }
+
+        /* ADCAV */
+        .adcav-grid { display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: start; padding: 11px 14px; border-bottom: 1px solid #e8f0f8; }
+        .letra { color: var(--secondary); font-size: 2em; font-weight: bold; text-align: center; font-family: 'Georgia', serif; padding-top: 2px; }
+
+        /* CIE-10 */
+        .dx-table { width: 100%; border-collapse: collapse; margin-top: 8px; background: white; font-size: 10px; }
+        .dx-table th, .dx-table td { border: 1px solid #ddd; padding: 6px 8px; }
+        .dx-table th { background: var(--primary); color: white; }
+        .suggestions { position: absolute; width: 100%; background: white; border: 1px solid #ddd; z-index: 200; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.12); border-radius: 0 0 6px 6px; }
+        .suggestion-item { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 11px; }
+        .suggestion-item:hover { background: #d6eaf8; }
+
+        /* BUTTONS */
+        .btn-main { background: var(--accent); color: white; padding: 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 28px; font-size: 1.1em; font-family: inherit; }
+        .btn-main:hover { opacity: 0.88; }
+        .btn-sm { padding: 5px 12px; border-radius: 4px; border: none; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 600; }
+
+        /* Origen / referencia */
+        .origen-referencia-box { background: #fff8e1; border: 2px solid var(--gold); border-radius: 7px; padding: 10px 14px; margin-top: 8px; }
+        .motivo-box { background: #fce4ec; border: 2px solid #e91e63; border-radius: 8px; padding: 14px; margin-top: 14px; }
+
+        /* VIG semáforo */
+        .vig-ok   { color: #1a8a45; font-weight: bold; }
+        .vig-warn { color: var(--warn); font-weight: bold; }
+        .vig-high { color: var(--danger); font-weight: bold; }
+
+        /* Toast */
+        #toast { position: fixed; bottom: 22px; right: 22px; background: var(--primary); color: white; padding: 9px 16px; border-radius: 8px; font-size: 11px; opacity: 0; transition: opacity 0.4s; z-index: 9999; pointer-events: none; }
+        #toast.show { opacity: 1; }
+
+        /* Autosave indicator */
+        #saveIndicator { position: fixed; top: 14px; right: 16px; background: #eafaf1; border: 1px solid #a9dfbf; color: #1e8449; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; z-index: 1000; transition: opacity 0.5s; }
+        #saveIndicator.saving { background: #fef9e7; border-color: #f9ca65; color: #b7770d; }
+
+        /* Output */
+        .output-col { white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 10.5px; border: 1px solid #ddd; padding: 12px; border-radius: 6px; min-height: 300px; background: #fafafa; }
+        .export-header { text-align: center; color: white; padding: 8px; border-radius: 5px 5px 0 0; font-weight: bold; font-size: 12px; }
+
+        .hidden { display: none; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border-radius: 0; padding: 12px; }
+            h2 { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PUNTO 10: DISCLAIMER MODAL                                 -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="disclaimerModal">
+    <div id="disclaimerBox">
+        <h2>⚠️ AVISO IMPORTANTE — LEER ANTES DE USAR</h2>
+
+        <h3>📋 Responsabilidad Clínica</h3>
+        <ul>
+            <li>Este aplicativo es una <strong>herramienta de apoyo</strong> para la documentación clínica. <strong>No reemplaza</strong> el criterio médico ni la toma de decisiones clínicas.</li>
+            <li>Todos los datos ingresados, cálculos generados (dosis, volúmenes, VIG, edad gestacional) y la historia clínica resultante <strong>deben ser verificados</strong> por el profesional de salud responsable antes de ser aplicados.</li>
+            <li>El uso incorrecto o la aplicación de indicaciones sin verificación es <strong>responsabilidad exclusiva del usuario</strong>. Los desarrolladores del aplicativo no asumen responsabilidad por errores clínicos derivados de su uso.</li>
+            <li>Este sistema no constituye una herramienta de diagnóstico médico certificada.</li>
+        </ul>
+
+        <h3>🔒 Privacidad y Datos del Paciente</h3>
+        <ul>
+            <li>Los datos se almacenan <strong>localmente en su navegador</strong> (localStorage). No se transmiten a servidores externos.</li>
+            <li>El usuario es responsable del manejo, resguardo y confidencialidad de la información de los pacientes, conforme a la normativa vigente de protección de datos en su país.</li>
+            <li>Evite usar este aplicativo en equipos compartidos sin eliminar los datos al finalizar.</li>
+        </ul>
+
+        <h3>©️ Derechos de Autor y Propiedad Intelectual</h3>
+        <ul>
+            <li>Este aplicativo es propiedad intelectual de su autor. <strong>Queda prohibida</strong> su reproducción, distribución, modificación o comercialización sin autorización expresa por escrito.</li>
+            <li>El uso está autorizado exclusivamente para el personal médico del servicio de Neonatología del HSVP.</li>
+            <li>Cualquier uso fuera del ámbito autorizado constituye una infracción a los derechos de propiedad intelectual.</li>
+        </ul>
+
+        <h3>🚫 Uso Indebido</h3>
+        <ul>
+            <li>Queda prohibido el uso de este sistema para fines distintos a la atención neonatal clínica en el contexto para el que fue desarrollado.</li>
+            <li>No se permite la extracción masiva de datos, la ingeniería inversa del código, ni el uso con fines comerciales o de investigación sin autorización.</li>
+        </ul>
+
+        <label style="display:flex; align-items:center; gap:8px; margin-top:16px; cursor:pointer; font-weight:bold; font-size:11px;">
+            <input type="checkbox" id="chkDisclaimer" onchange="document.getElementById('btnAceptar').disabled=!this.checked">
+            He leído y acepto todos los términos y condiciones de uso.
+        </label>
+        <button id="btnAceptar" disabled onclick="cerrarDisclaimer()">ACEPTO — INGRESAR AL SISTEMA</button>
+        <p class="disclaimer-footer">HC Neonatología v30.0 · HSVP · © 2024 — Todos los derechos reservados</p>
+    </div>
+</div>
+
+<!-- Indicador de auto-guardado -->
+<div id="saveIndicator" class="no-print">💾 Auto-guardado activo</div>
+
+<div class="container">
+    <h1>🏥 SISTEMA NEONATAL INTEGRAL — HSVP</h1>
+    <div class="version-badge">Historia Clínica Ingreso Neonatología v30.0 · © HSVP 2024</div>
+
+    <div style="display:flex; gap:10px; margin-bottom:18px;" class="no-print">
+        <button class="btn-main" onclick="limpiarFormulario()" style="flex:1;background:#c0392b;margin-top:0;padding:12px;">🗑 NUEVO PACIENTE</button>
+        <button class="btn-main" onclick="loadForm(true)" style="flex:1;background:var(--gold);margin-top:0;padding:12px;">↩ RECUPERAR GUARDADO</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <h2>1. Datos de Filiación y Admisión</h2>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <div class="calc-card" style="border-color:var(--secondary);">
+        <div class="grid">
+            <div class="field"><label>FECHA DE INGRESO</label><input type="date" id="fIngreso" onchange="calcEdadAlIngreso()"></div>
+            <div class="field"><label>FECHA DE NACIMIENTO</label><input type="date" id="fNac" onchange="calcEdadAlIngreso(); calcEG_FUM()"></div>
+            <div class="field"><label>HORA DE NACIMIENTO</label><input type="time" id="hNac" onchange="calcEdadAlIngreso()"></div>
+            <div class="field"><label>EDAD AL INGRESO (auto)</label><input type="text" id="edadReal" readonly class="highlight-box" placeholder="Auto-calculado"></div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="field"><label>PRIMER APELLIDO</label><input type="text" id="ape1N"></div>
+        <div class="field"><label>SEGUNDO APELLIDO</label><input type="text" id="ape2N"></div>
+        <div class="field"><label>NOMBRES</label><input type="text" id="nomN"></div>
+        <div class="field"><label>HCU</label><input type="text" id="hcu"></div>
+        <div class="field"><label>SEXO</label>
+            <select id="sexoN"><option>MASCULINO</option><option>FEMENINO</option><option>INDETERMINADO</option></select>
+        </div>
+        <!-- PUNTO 1: ORIGEN -->
+        <div class="field"><label>ORIGEN</label>
+            <select id="origenRN" onchange="toggleOrigen(this.value)">
+                <option value="">-- Seleccionar --</option>
+                <option value="CENTRO OBSTÉTRICO">Centro Obstétrico</option>
+                <option value="ALOJAMIENTO">Alojamiento Conjunto</option>
+                <option value="EMERGENCIA">Emergencia</option>
+                <option value="REFERENCIA">Referencia Externa</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- PUNTO 3: Cuadro referencia en filiación -->
+    <div id="box_referencia" class="hidden origen-referencia-box">
+        <div class="field">
+            <label>📍 INSTITUCIÓN DE REFERENCIA (Hospital o Centro de Salud)</label>
+            <input type="text" id="lugarReferencia" placeholder="Nombre del Hospital o Centro de Salud de procedencia">
+        </div>
+    </div>
+
+    <h3>Datos de la Madre</h3>
+    <div class="grid">
+        <div class="field"><label>NOMBRE COMPLETO</label><input type="text" id="nomM"></div>
+        <div class="field"><label>CÉDULA</label><input type="text" id="cedM"></div>
+        <div class="field"><label>EDAD (años)</label><input type="number" id="edadM" min="10" max="60"></div>
+        <div class="field"><label>INSTRUCCIÓN</label><input type="text" id="insM"></div>
+        <div class="field"><label>OCUPACIÓN / PROFESIÓN</label><input type="text" id="ocuM"></div>
+    </div>
+    <div class="grid">
+        <div class="field"><label>RAZA / ETNIA</label>
+            <select id="razaM">
+                <option>MESTIZO</option><option>INDÍGENA</option>
+                <option>AFRODESCENDIENTE</option><option>BLANCO</option><option>MONTUBIO</option>
+            </select>
+        </div>
+        <div class="field"><label>RELIGIÓN</label>
+            <select id="relM" onchange="toggleOtroReligion(this)">
+                <option value="CATÓLICA">CATÓLICA</option><option value="CRISTIANA">CRISTIANA</option>
+                <option value="EVANGÉLICA">EVANGÉLICA</option>
+                <option value="TESTIGO DE JEHOVÁ">TESTIGO DE JEHOVÁ</option><option value="OTRO">OTRO</option>
+            </select>
+            <input type="text" id="relM_otro" class="hidden" placeholder="¿Cuál?" style="margin-top:4px">
+        </div>
+        <div class="field"><label>GRUPO SANGUÍNEO</label>
+            <select id="gsM">
+                <option>O RH+</option><option>O RH-</option><option>A RH+</option><option>A RH-</option>
+                <option>B RH+</option><option>B RH-</option><option>AB RH+</option><option>AB RH-</option>
+                <option>DESCONOCIDO</option>
+            </select>
+        </div>
+        <div class="field"><label>LUGAR DE NACIMIENTO</label><input type="text" id="lugNacM"></div>
+    </div>
+    <div class="grid">
+        <div class="field"><label>DIRECCIÓN</label><input type="text" id="dirM"></div>
+        <div class="field"><label>TELÉFONO</label><input type="text" id="telM"></div>
+        <div class="field"><label>COBERTURA DE SALUD</label>
+            <select id="cobM" onchange="toggleCoberturaPrivada(this,'cobM_priv')">
+                <option>NINGUNA</option><option>IESS</option><option>MSP</option>
+                <option>ISSFA</option><option>ISSPOL</option><option value="PRIVADO">PRIVADO</option>
+            </select>
+            <input type="text" id="cobM_priv" class="hidden" placeholder="Nombre aseguradora" style="margin-top:4px">
+        </div>
+        <div class="field"><label>AVISAR EN EMERGENCIA</label><textarea id="emergenciaCont" rows="1"></textarea></div>
+    </div>
+
+    <h3>Datos del Padre</h3>
+    <div class="grid">
+        <div class="field"><label>NOMBRE COMPLETO</label><input type="text" id="nomP"></div>
+        <div class="field"><label>CÉDULA</label><input type="text" id="cedP"></div>
+        <div class="field"><label>EDAD (años)</label><input type="number" id="edadP" min="10" max="90"></div>
+        <div class="field"><label>OCUPACIÓN</label><input type="text" id="ocuP"></div>
+        <div class="field"><label>DIRECCIÓN</label><input type="text" id="dirP"></div>
+        <div class="field"><label>TELÉFONO</label><input type="text" id="telP"></div>
+        <div class="field"><label>COBERTURA</label>
+            <select id="cobP" onchange="toggleCoberturaPrivada(this,'cobP_priv')">
+                <option>NINGUNA</option><option>IESS</option><option>MSP</option>
+                <option>ISSFA</option><option>ISSPOL</option><option value="PRIVADO">PRIVADO</option>
+            </select>
+            <input type="text" id="cobP_priv" class="hidden" placeholder="Nombre aseguradora" style="margin-top:4px">
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <h2>2. Antecedentes Clínicos</h2>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <h3>Antecedentes Maternos</h3>
+    <div class="grid">
+        <div class="field full-width"><label>ANTECEDENTES PATOLÓGICOS</label><textarea id="antPatM" rows="2" placeholder="No refiere / especificar"></textarea></div>
+        <div class="field full-width"><label>ANTECEDENTES QUIRÚRGICOS</label><textarea id="antQuiM" rows="2" placeholder="No refiere / especificar"></textarea></div>
+        <div class="field full-width"><label>ANTECEDENTES FAMILIARES</label><textarea id="antFamM" rows="2" placeholder="No refiere / especificar"></textarea></div>
+    </div>
+
+    <h3>Gineco-Obstétricos</h3>
+    <div class="grid">
+        <div class="field"><label>MENARQUIA (años)</label><input type="number" id="menarquia" min="8" max="18"></div>
+        <div class="field"><label>CICLOS</label><input type="text" id="ciclos" placeholder="ej: regulares 28/4"></div>
+        <div class="field"><label>IVSA (años)</label><input type="number" id="ivsa"></div>
+        <div class="field"><label>Nº PAREJAS</label><input type="number" id="parejas" min="0"></div>
+        <div class="field"><label>ETS</label><input type="text" id="ets" placeholder="Ninguna / especificar"></div>
+        <div class="field"><label>PAPTEST</label><input type="text" id="paptest" placeholder="ej: Normal 2023"></div>
+        <div class="field"><label>MÉTODO ACO</label><input type="text" id="aco" placeholder="Ninguno"></div>
+    </div>
+
+    <div class="calc-card">
+        <div class="grid">
+            <div class="field"><label>FUM</label><input type="date" id="fum" onchange="calcEG_FUM()"></div>
+            <!-- PUNTO 4: EG siempre calculada -->
+            <div class="field"><label>EG POR FUM (auto)</label><input type="text" id="egFum" readonly class="highlight-box" placeholder="Auto-calculado"></div>
+            <div class="field"><label>EG ECO / ESTIMADA</label><input type="text" id="egEco" placeholder="ej: 34+2 sg"></div>
+        </div>
+        <div class="grid" style="margin-top:10px">
+            <div class="field"><label>Nº CONTROLES PRENATALES</label><input type="number" id="ctrlPre" min="0" oninput="toggleInputVal(this,'ctrlPre_lugar')"></div>
+            <div class="field hidden" id="box_ctrlPre_lugar"><label>LUGAR CONTROLES</label><input type="text" id="ctrlPre_lugar"></div>
+            <div class="field"><label>Nº ECOSONOGRAFÍAS</label><input type="number" id="numEcos" min="0" oninput="toggleInputVal(this,'ecos_obs')"></div>
+            <div class="field hidden" id="box_ecos_obs"><label>OBSERVACIONES ECOS</label><input type="text" id="ecos_obs"></div>
+        </div>
+        <div class="grid" style="margin-top:10px">
+            <div class="field full-width">
+                <label><input type="checkbox" id="chk_inf_hosp" onchange="toggleCheckboxBlock(this,'inf_hosp_desc')"> Antecedentes Infecciosos / Hospitalizaciones durante el embarazo</label>
+                <textarea id="inf_hosp_desc" class="hidden" rows="2" style="margin-top:5px" placeholder="Describa..."></textarea>
+            </div>
+            <div class="field full-width">
+                <label><input type="checkbox" id="chk_comp_nutri" onchange="toggleCheckboxBlock(this,'comp_nutri_desc')"> Complementos Nutricionales</label>
+                <textarea id="comp_nutri_desc" class="hidden" rows="2" style="margin-top:5px" placeholder="Describa..."></textarea>
+            </div>
+            <div class="field full-width">
+                <label><input type="checkbox" id="chk_med_emb" onchange="toggleCheckboxBlock(this,'med_emb_desc')"> Medicación durante el embarazo</label>
+                <textarea id="med_emb_desc" class="hidden" rows="2" style="margin-top:5px" placeholder="Describa..."></textarea>
+            </div>
+        </div>
+        <div class="grid" style="margin-top:10px">
+            <div class="field"><label>GESTAS</label><input type="number" id="gestas" min="0" oninput="generarGestaciones()"></div>
+            <div class="field"><label>PARTOS</label><input type="number" id="partos" min="0"></div>
+            <div class="field"><label>CESÁREAS</label><input type="number" id="cesareas" min="0"></div>
+            <div class="field"><label>ABORTOS</label><input type="number" id="abortos" min="0"></div>
+            <div class="field"><label>HIJOS VIVOS</label><input type="number" id="hVivos" min="0"></div>
+            <div class="field"><label>HIJOS MUERTOS</label><input type="number" id="hMuertos" min="0" oninput="toggleHMuertos()"></div>
+        </div>
+        <div id="contenedorGestaciones"></div>
+        <div id="detallesMuertos" class="hidden" style="margin-top:10px">
+            <label>Descripción Causa de Muerte:</label>
+            <textarea id="antHMuertos" rows="2" style="width:100%;margin-top:4px"></textarea>
+        </div>
+
+        <h3>Inmunizaciones y Maduración</h3>
+        <div class="grid">
+            <div class="inmu-item"><input type="checkbox" id="v_dt" onchange="toggleDosis(this,'dt_dosis')"><label>DT</label><input type="number" id="dt_dosis" class="hidden" placeholder="Dosis" style="width:55px;margin-left:8px" min="1" max="5"></div>
+            <div class="inmu-item"><input type="checkbox" id="v_hepb" onchange="toggleDosis(this,'hepb_dosis')"><label>Hep B</label><input type="number" id="hepb_dosis" class="hidden" placeholder="Dosis" style="width:55px;margin-left:8px" min="1" max="5"></div>
+            <div class="inmu-item"><input type="checkbox" id="v_inf" onchange="toggleDosis(this,'inf_dosis')"><label>Influenza</label><input type="number" id="inf_dosis" class="hidden" placeholder="Dosis" style="width:55px;margin-left:8px" min="1" max="5"></div>
+            <div class="inmu-item"><input type="checkbox" id="v_covid" onchange="toggleDosis(this,'covid_dosis')"><label>COVID-19</label><input type="number" id="covid_dosis" class="hidden" placeholder="Dosis" style="width:55px;margin-left:8px" min="1" max="5"></div>
+            <div class="field"><label>MADURACIÓN PULMONAR</label>
+                <select id="madPul" onchange="toggleMaduracion()"><option>NO</option><option>COMPLETA</option><option>INCOMPLETA</option></select>
+                <input type="text" id="madPul_tipo" class="hidden" placeholder="Corticoide / N° dosis" style="margin-top:4px">
+            </div>
+        </div>
+
+        <h3>Antecedentes Narrativos</h3>
+        <div class="field full-width" style="margin-bottom:8px"><label>ANTECEDENTES PRENATALES</label><textarea id="narrPre" rows="3" placeholder="Resuma la evolución del embarazo..."></textarea></div>
+        <div class="field full-width" style="margin-bottom:8px"><label>ANTECEDENTES NATALES</label><textarea id="narrNat" rows="3" placeholder="Tipo de parto, complicaciones, líquido amniótico..."></textarea></div>
+        <div class="field full-width"><label>ANTECEDENTES POSTNATALES</label><textarea id="narrPost" rows="3" placeholder="Llanto, reanimación, traslado..."></textarea></div>
+
+        <!-- PUNTO 2: Motivo de consulta y Enfermedad Actual -->
+        <div id="box_motivo_enfermedad" class="hidden motivo-box">
+            <h4>🩺 Sección adicional — Alojamiento / Emergencia</h4>
+            <div class="field full-width" style="margin-bottom:8px">
+                <label>MOTIVO DE CONSULTA</label>
+                <textarea id="motivoConsulta" rows="2" placeholder="Paciente de X días de vida traído por presentar..."></textarea>
+            </div>
+            <div class="field full-width">
+                <label>ENFERMEDAD ACTUAL</label>
+                <textarea id="enfermedadActual" rows="5" placeholder="Describa cronológicamente la enfermedad actual del paciente..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <h2>3. Examen Físico y Escalas de Valoración</h2>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <div class="grid">
+        <div class="field"><label>PESO (g)</label><input type="number" id="peso_ex" min="200" max="6000" oninput="document.getElementById('p').value=this.value; recalcular()"></div>
+        <div class="field"><label>TALLA (cm)</label><input type="number" id="talla" step="0.1"></div>
+        <div class="field"><label>P. CEFÁLICO (cm)</label><input type="number" id="pc" step="0.1"></div>
+        <div class="field"><label>P. TORÁCICO (cm)</label><input type="number" id="pt" step="0.1"></div>
+        <div class="field"><label>P. BRAQUIAL (cm)</label><input type="number" id="pb" step="0.1"></div>
+        <div class="field"><label>FC (lpm)</label><input type="number" id="fc"></div>
+        <div class="field"><label>FR (rpm)</label><input type="number" id="fr"></div>
+        <div class="field"><label>T° AXILAR (°C)</label><input type="number" id="temp" step="0.1"></div>
+        <div class="field"><label>SatO2 (%)</label><input type="number" id="sat"></div>
+        <div class="field"><label>PRESIÓN ARTERIAL</label>
+            <input type="text" id="pa_val" placeholder="ej. 60/40">
+            <a href="https://www.pediatriaintegral.es/numeros-anteriores/publicacion-2015-05/tension-arterial-en-la-infancia/" target="_blank" style="font-size:10px;color:var(--secondary);text-decoration:none;margin-top:3px;">📊 Percentiles PA ↗</a>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr;">
+        <div class="calc-card">
+            <h3>APGAR 1 min</h3>
+            <div class="score-box">FC: <select class="apgar-calc"><option value="0">0 – Ausente</option><option value="1">1 – &lt;100</option><option value="2">2 – ≥100</option></select></div>
+            <div class="score-box">Esfuerzo: <select class="apgar-calc"><option value="0">0 – Ausente</option><option value="1">1 – Débil</option><option value="2">2 – Vigoroso</option></select></div>
+            <div class="score-box">Tono: <select class="apgar-calc"><option value="0">0 – Flácido</option><option value="1">1 – Algo de flexión</option><option value="2">2 – Activo</option></select></div>
+            <div class="score-box">Reflejos: <select class="apgar-calc"><option value="0">0 – Sin respuesta</option><option value="1">1 – Mueca</option><option value="2">2 – Llanto</option></select></div>
+            <div class="score-box">Color: <select class="apgar-calc"><option value="0">0 – Cianótico</option><option value="1">1 – Acrocianosis</option><option value="2">2 – Rosado</option></select></div>
+            <div class="field" style="margin-top:8px"><label>APGAR 1'</label><input type="text" id="resApgar1" readonly class="highlight-box"></div>
+        </div>
+        <div class="calc-card">
+            <h3>APGAR 5 min</h3>
+            <div class="score-box">FC: <select class="apgar-calc-5"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Esfuerzo: <select class="apgar-calc-5"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Tono: <select class="apgar-calc-5"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Reflejos: <select class="apgar-calc-5"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Color: <select class="apgar-calc-5"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="field" style="margin-top:8px"><label>APGAR 5'</label><input type="text" id="resApgar5" readonly class="highlight-box"></div>
+        </div>
+        <div class="calc-card">
+            <h3>APGAR 10 min</h3>
+            <div class="score-box">FC: <select class="apgar-calc-10"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Esfuerzo: <select class="apgar-calc-10"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Tono: <select class="apgar-calc-10"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Reflejos: <select class="apgar-calc-10"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="score-box">Color: <select class="apgar-calc-10"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+            <div class="field" style="margin-top:8px"><label>APGAR 10'</label><input type="text" id="resApgar10" readonly class="highlight-box"></div>
+        </div>
+        <div class="calc-card">
+            <h3>Score de Downes</h3>
+            <div class="score-box">FR: <select class="downes-calc"><option value="0">0 – &lt;60 rpm</option><option value="1">1 – 60-80 rpm</option><option value="2">2 – &gt;80 rpm</option></select></div>
+            <div class="score-box">Cianosis: <select class="downes-calc"><option value="0">0 – No</option><option value="1">1 – FiO2 &lt;40%</option><option value="2">2 – FiO2 ≥40%</option></select></div>
+            <div class="score-box">Entrada de aire: <select class="downes-calc"><option value="0">0 – Normal</option><option value="1">1 – Disminuida</option><option value="2">2 – Ausente</option></select></div>
+            <div class="score-box">Quejido: <select class="downes-calc"><option value="0">0 – No</option><option value="1">1 – Con estetoscopio</option><option value="2">2 – Sin estetoscopio</option></select></div>
+            <div class="score-box">Tirajes: <select class="downes-calc"><option value="0">0 – No</option><option value="1">1 – Leve</option><option value="2">2 – Moderado/severo</option></select></div>
+            <div class="field" style="margin-top:8px"><label>TOTAL DOWNES</label><input type="text" id="resDownes" readonly class="highlight-box"></div>
+            <div id="interpretDownes" style="text-align:center;font-weight:bold;margin-top:5px;font-size:11px;"></div>
+        </div>
+        <div class="calc-card" style="grid-column:1/-1;">
+            <h3>Edad Gestacional por Capurro</h3>
+            <div class="field"><label>SEMANAS ESTIMADAS (CAPURRO)</label><input type="text" id="capurro" placeholder="ej. 38+2 semanas"></div>
+        </div>
+    </div>
+
+    <div class="calc-card">
+        <h3>Examen Físico Regional</h3>
+        <div class="ef-row"><b>Piel y Faneras</b><textarea id="ef_piel" rows="1">Rosada, elástica, hidratada.</textarea></div>
+        <div class="ef-row"><b>Cabeza</b><textarea id="ef_cab" rows="1">Normocéfalo, fontanela anterior normotensa, suturas normales.</textarea></div>
+        <div class="ef-row"><b>Cuello</b><textarea id="ef_cuello" rows="1">Simétrico, móvil, sin adenopatías.</textarea></div>
+        <div class="ef-row"><b>Tórax</b><textarea id="ef_torax" rows="1">Simétrico, sin deformidades.</textarea></div>
+        <div class="ef-row"><b>Pulmones</b><textarea id="ef_pulm" rows="1">Murmullo vesicular conservado bilateral, sin ruidos sobreañadidos.</textarea></div>
+        <div class="ef-row"><b>Corazón</b><textarea id="ef_cor" rows="1">Rítmico, sin soplos audibles.</textarea></div>
+        <div class="ef-row"><b>Abdomen</b><textarea id="ef_abd" rows="1">Suave, depresible, no doloroso. Cordón umbilical con 3 vasos, húmedo.</textarea></div>
+        <div class="ef-row"><b>Genitales</b><textarea id="ef_genit" rows="1">Acorde a sexo y edad gestacional.</textarea></div>
+        <div class="ef-row"><b>Extremidades</b><textarea id="ef_ext" rows="1">Simétricas, sin deformidades. Pulsos periféricos presentes y simétricos.</textarea></div>
+        <div class="ef-row"><b>Neurológico</b><textarea id="ef_neuro" rows="1">Activo, reactivo, llanto vigoroso. Reflejos arcaicos presentes.</textarea></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <h2>4. Diagnósticos (CIE-10)</h2>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <div class="grid">
+        <div class="field full-width" style="position:relative;">
+            <label>BUSCAR / INGRESAR DIAGNÓSTICO</label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="dx-search" oninput="showSuggestions(this.value)" placeholder="Código CIE-10 o descripción..." style="flex:1;padding:10px;border:2px solid var(--secondary);border-radius:6px;font-weight:bold;">
+                <button type="button" class="btn-sm" style="background:var(--secondary);color:white;padding:0 16px;" onclick="agregarDxManual()">Agregar ↵</button>
+            </div>
+            <div id="dx-suggestions" class="hidden suggestions"></div>
+        </div>
+        <table class="dx-table">
+            <thead><tr><th>CIE-10</th><th>Diagnóstico</th><th>Tipo</th><th>Condición</th><th>Principal</th><th></th></tr></thead>
+            <tbody id="lista-dx"></tbody>
+        </table>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <h2>5. Plan de Manejo (ADCAVANDIMELCO)</h2>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <div class="calc-card" style="margin-bottom:16px;">
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="field"><label>PESO (g) — sincronizado</label><input type="number" id="p" value="3000" min="200" max="6000" oninput="document.getElementById('peso_ex').value=this.value; recalcular()"></div>
+            <div class="field"><label>LT BASE (ml/kg/día)</label><input type="number" id="l" value="80" min="0" max="200" oninput="recalcular()"></div>
+            <div class="field"><label>% DEXTROSA</label><input type="number" id="dexPerc" value="10" min="5" max="25" step="0.5" oninput="recalcular()"></div>
+            <div style="background:#dff9fb;padding:10px;border-radius:6px;border:1px solid #81ecec;">
+                <label style="display:block;margin-bottom:5px;"><input type="checkbox" id="foto" onchange="recalcular()"> Fototerapia (+15%)</label>
+                <label style="display:block;"><input type="checkbox" id="cuna" onchange="recalcular()"> Cuna Radiante (+15%)</label>
+            </div>
+        </div>
+        <div id="resLTAjustado" style="margin-top:10px;background:#e8f5e9;padding:8px;border-radius:6px;font-weight:bold;color:#1e8449;font-size:11px;"></div>
+    </div>
+
+    <div id="adcav-form" style="background:white;border-radius:10px;border:1px solid #d6eaf8;overflow:hidden;">
+
+        <div class="adcav-grid"><div class="letra">A</div><div><b>ADMISIÓN:</b><input class="input-inline" id="adm" value="Neonatología HSVP" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"></div></div>
+
+        <div class="adcav-grid"><div class="letra">D</div><div><b>DIAGNÓSTICOS:</b><textarea id="diag" rows="3" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;" placeholder="Se sincroniza con sección CIE-10..."></textarea></div></div>
+
+        <div class="adcav-grid"><div class="letra">C</div><div><b>CONDICIÓN:</b><select id="cond" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"><option>ESTABLE</option><option>ESTABLE DENTRO DE SU GRAVEDAD</option><option>CRÍTICO</option><option>INESTABLE</option></select></div></div>
+
+        <div class="adcav-grid"><div class="letra">A</div><div><b>ALERGIAS:</b><select id="aler" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"><option>NEGATIVO</option><option>NO REFIERE</option><option>PENICILINA</option><option>OTRO</option></select></div></div>
+
+        <!-- PUNTO 5: Vitales pre-escritos completos -->
+        <div class="adcav-grid">
+            <div class="letra">V</div>
+            <div>
+                <b>VITALES / MONITOREO:</b>
+                <textarea id="vit_txt" rows="9" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;">Monitoreo Continuo.
+Control de Signos Vitales cada 3 horas: Frecuencia Cardíaca, Frecuencia Respiratoria, Saturación de Oxígeno, Temperatura Axilar.
+Peso Diario.
+Control de Ingesta / Excreta.
+Balance Hídrico.
+Diuresis Horaria.
+Glicemia Capilar.
+Score de Downes.</textarea>
+            </div>
+        </div>
+
+        <div class="adcav-grid"><div class="letra">A</div><div><b>ACTITUD:</b><select id="act" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"><option>SEMIFOWLER</option><option>POSICIÓN ANTIRREFLUJO</option><option>PRONO</option><option>DECÚBITO LATERAL</option></select></div></div>
+
+        <!-- PUNTO 6: Nombres completos de alimentación + toggle descuento -->
+        <div class="adcav-grid">
+            <div class="letra">D</div>
+            <div>
+                <b>DIETA:</b>
+                <select id="tipoDieta" onchange="recalcular()" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;">
+                    <option value="NPO">NADA POR VÍA ORAL (NPO)</option>
+                    <option value="LM">LECHE MATERNA</option>
+                    <option value="LF">FÓRMULA MATERNIZADA</option>
+                    <option value="MIXTA">LECHE MATERNA Y/O FÓRMULA MATERNIZADA</option>
+                </select>
+                <div id="boxDieta" class="hidden" style="margin-top:8px;background:#f0fdf4;padding:10px;border-radius:6px;border:1px solid #a7f3d0;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span>Vol/toma:</span>
+                        <input type="number" id="dietCant" value="0" style="width:60px;border:1px solid #ccc;padding:4px;border-radius:4px;" min="0" oninput="recalcular()"> ml
+                        &nbsp;Frec:
+                        <select id="dietFreq" onchange="recalcular()" style="width:65px;border:1px solid #ccc;padding:4px;border-radius:4px;">
+                            <option value="2">c/2h</option><option value="3" selected>c/3h</option><option value="4">c/4h</option>
+                        </select>
+                        <span id="resDietaTotal" style="font-weight:bold;color:#15803d;"></span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;font-weight:bold;background:#dcfce7;padding:6px 10px;border-radius:5px;border:1px solid #86efac;">
+                        <input type="checkbox" id="chkDescontarLeche" checked onchange="recalcular()">
+                        Descontar volumen de leche de los Líquidos Totales IV
+                    </label>
+                    <div id="infoDescuento" style="font-size:10px;color:#555;margin-top:4px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PUNTO 8: Prescripción IV detallada -->
+        <div class="adcav-grid">
+            <div class="letra">I</div>
+            <div>
+                <b>LÍQUIDOS INTRAVENOSOS:</b>
+                <div id="resFinalIV" style="background:#fffde7;border:2px solid #fbbf24;padding:14px;border-radius:8px;font-weight:bold;color:#92400e;margin-top:6px;line-height:2;">
+                    Ingrese peso y parámetros para calcular...
+                </div>
+            </div>
+        </div>
+
+        <!-- PUNTO 7: Medicamentos con mg calculados, ml y días ATB -->
+        <div class="adcav-grid">
+            <div class="letra">M</div>
+            <div>
+                <b>MEDICAMENTOS:</b>
+                <div style="overflow-x:auto;margin-top:6px;">
+                <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                    <thead style="background:var(--primary);color:white;">
+                        <tr>
+                            <th style="padding:6px;">Fármaco</th>
+                            <th style="padding:6px;">mg/kg/dosis</th>
+                            <th style="padding:6px;">Frec (h)</th>
+                            <th style="padding:6px;">Conc (mg/ml)</th>
+                            <th style="padding:6px;">Días ATB</th>
+                            <th style="padding:6px;">Día actual</th>
+                            <th style="padding:6px;">¿Bal?</th>
+                            <th style="padding:6px;color:#93c5fd;">mg/dosis</th>
+                            <th style="padding:6px;color:#86efac;">ml/dosis</th>
+                            <th style="padding:6px;">ml/día</th>
+                            <th style="padding:6px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyMed"></tbody>
+                </table>
+                </div>
+                <button onclick="agregarFilaMed()" type="button" class="btn-sm" style="margin-top:8px;background:var(--secondary);color:white;">+ Añadir Fármaco</button>
+                <div id="resumenMed" style="margin-top:8px;background:#f3e8ff;padding:8px;border-radius:5px;font-size:10px;color:#6b21a8;font-weight:bold;"></div>
+            </div>
+        </div>
+
+        <div class="adcav-grid"><div class="letra">E</div><div><b>EXÁMENES / IMAGEN:</b><input id="exa" placeholder="Ej: Rx Tórax AP, Eco Transfontanelar" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"></div></div>
+        <div class="adcav-grid"><div class="letra">L</div><div><b>LABORATORIO:</b><input id="lab" placeholder="Ej: BHC, PCR, Gasometría, Bilirrubinas" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"></div></div>
+        <div class="adcav-grid"><div class="letra">C</div><div><b>INTERCONSULTAS:</b><input id="int" placeholder="Ej: Cardiología, Genética, Neurología" style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"></div></div>
+        <div class="adcav-grid"><div class="letra">O</div><div><b>OTROS:</b><input id="otr" value="Cuidados de enfermería. Aseo del cordón umbilical." style="width:100%;border:1px solid #ddd;padding:6px;border-radius:4px;font-family:inherit;font-size:11px;margin-top:4px;"></div></div>
+    </div>
+
+    <!-- Médicos -->
+    <div class="calc-card" style="margin-top:20px;border-color:var(--accent);">
+        <h3>Médicos que Ingresan</h3>
+        <div style="display:flex;gap:8px;max-width:420px;margin:0 auto;">
+            <input type="text" id="medicoInput" list="listaMedicos" placeholder="Nombre del médico" autocomplete="off" style="flex:1;">
+            <button onclick="agregarMedicoSel()" type="button" class="btn-sm" style="background:var(--primary);color:white;">Agregar</button>
+            <datalist id="listaMedicos"></datalist>
+        </div>
+        <div id="medicosContainer" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div style="display:flex;gap:10px;margin-top:20px;" class="no-print">
+        <button class="btn-main" onclick="generarTodo()" style="flex:2;">📄 GENERAR HISTORIA CLÍNICA</button>
+        <button class="btn-main" onclick="exportarWord()" style="flex:1;background:#1a5276;margin-top:0;padding:14px;">📝 EXPORTAR A WORD</button>
+        <button class="btn-main" onclick="window.print()" style="flex:1;background:var(--secondary);margin-top:0;padding:14px;">🖨 IMPRIMIR</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:10px;" class="no-print">
+        <button class="btn-main" onclick="verRegistroPacientes()" style="flex:1;background:#6c3483;margin-top:0;padding:10px;font-size:0.95em;">📋 VER REGISTRO DE PACIENTES</button>
+        <button class="btn-main" onclick="exportarRegistroCSV()" style="flex:1;background:#117a65;margin-top:0;padding:10px;font-size:0.95em;">📊 EXPORTAR REGISTRO (.CSV)</button>
+        <button class="btn-main" onclick="verMarcasTrazabilidad()" style="flex:1;background:#1a5276;margin-top:0;padding:10px;font-size:0.95em;">🔍 TRAZABILIDAD DOCS</button>
+    </div>
+
+    <!-- Salida -->
+    <div id="export-section" class="hidden" style="margin-top:20px;border:2px solid var(--primary);border-radius:10px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+            <div>
+                <div class="export-header" style="background:var(--primary);">HISTORIA CLÍNICA</div>
+                <div id="finalOutput-hc" class="output-col"></div>
+            </div>
+            <div style="border-left:2px solid var(--primary);">
+                <div class="export-header" style="background:var(--accent);">INDICACIONES (ADCAVANDIMELCO)</div>
+                <div id="finalOutput-adca" class="output-col"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// PUNTO 10: DISCLAIMER
+// ══════════════════════════════════════════════════════════════
+function cerrarDisclaimer() {
+    document.getElementById('disclaimerModal').style.display = 'none';
+    sessionStorage.setItem('disclaimer_ok', '1');
+}
+// Si ya aceptó en esta sesión, no mostrar de nuevo
+if (sessionStorage.getItem('disclaimer_ok') === '1') {
+    document.getElementById('disclaimerModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// BASE DE DATOS DE MEDICAMENTOS
+// ══════════════════════════════════════════════════════════════
+// Base de datos de medicamentos HSVP
+// Fuente: Tabla de Concentraciones de Diluciones de Neonatología — Farmacia Institucional HSVP (Bqf. Pomagualli)
+// d = dosis mg/kg/dosis | c = concentración mg/ml según tabla HSVP | f = frecuencia (horas) | b = descontar de balance | atb = es antibiótico/antifúngico/antiviral
+const dbHSVP = {
+    // ── ANTIBIÓTICOS ────────────────────────────────────────────────────────
+    "AMPICILINA":               { d: 50,   c: 100,   f: 12, b: true,  atb: true  }, // 1000mg → 100mg/ml
+    "AMPICILINA (meningitis)":  { d: 100,  c: 100,   f: 8,  b: true,  atb: true  }, // dosis meníngea
+    "AMIKACINA":                { d: 15,   c: 5,     f: 24, b: true,  atb: true  }, // 100mg o 500mg → 5mg/ml
+    "ACICLOVIR":                { d: 20,   c: 5,     f: 8,  b: true,  atb: true  }, // 250mg → 5mg/ml
+    "CEFTAZIDIMA":              { d: 50,   c: 40,    f: 12, b: true,  atb: true  }, // 1g → 40mg/ml
+    "CEFTRIAXONA":              { d: 50,   c: 40,    f: 24, b: true,  atb: true  }, // 1g → 40mg/ml
+    "CEFEPIME":                 { d: 50,   c: 40,    f: 12, b: true,  atb: true  }, // 1g → 40mg/ml
+    "CIPROFLOXACINO":           { d: 10,   c: 2,     f: 12, b: true,  atb: true  }, // 200mg/100ml → 2mg/ml
+    "CLARITROMICINA":           { d: 7.5,  c: 2,     f: 12, b: true,  atb: true  }, // 500mg → 2mg/ml
+    "COLISTINA":                { d: 2.5,  c: 1,     f: 12, b: true,  atb: true  }, // 100mg → 1mg/ml
+    "FLUCONAZOL":               { d: 6,    c: 2,     f: 24, b: true,  atb: true  }, // 0.2% → 2mg/ml
+    "GENTAMICINA":              { d: 4,    c: 4,     f: 24, b: true,  atb: true  }, // 80mg/2ml o 160mg/2ml → 4mg/ml
+    "IMIPENEM + CILASTATINA":   { d: 25,   c: 5,     f: 8,  b: true,  atb: true  }, // 500mg+500mg → 5mg/ml
+    "LINEZOLID":                { d: 10,   c: 2,     f: 8,  b: true,  atb: true  }, // 600mg/300ml → 2mg/ml
+    "MEROPENEM":                { d: 20,   c: 25,    f: 8,  b: true,  atb: true  }, // 500mg o 1000mg → 25mg/ml
+    "MEROPENEM (meningitis)":   { d: 40,   c: 25,    f: 8,  b: true,  atb: true  }, // dosis meníngea
+    "METRONIDAZOL":             { d: 7.5,  c: 5,     f: 12, b: true,  atb: true  }, // 0.5% → 5mg/ml
+    "OXACILINA":                { d: 50,   c: 25,    f: 6,  b: true,  atb: true  }, // 1g → 25mg/ml
+    "PENICILINA G SÓDICA":      { d: 50000,c: 20000, f: 12, b: true,  atb: true  }, // 5'000.000UI → 20000 UI/ml
+    "PIP-TAZO (Pip+Tazobactam)":{ d: 100,  c: 80,    f: 8,  b: true,  atb: true  }, // 4g+0.5g → 80mg/ml
+    "VANCOMICINA":              { d: 15,   c: 5,     f: 8,  b: true,  atb: true  }, // 500mg → 5mg/ml
+
+    // ── ELECTROLITOS / MINERALES ─────────────────────────────────────────────
+    "GLUCONATO DE CALCIO 10%":  { d: 200,  c: 50,    f: 12, b: true,  atb: false }, // 10% → 50mg/ml (c/12h en neonatos)
+    "BICARBONATO DE SODIO 8.4%":{ d: 1,    c: 0.5,   f: 0,  b: true,  atb: false }, // dosis según gasometría, c en mEq/ml
+    "CLORURO DE SODIO 20%":     { d: 2,    c: 3.42,  f: 0,  b: true,  atb: false }, // corrección hiponatremia, c en mEq/ml
+    "CLORURO DE POTASIO 14.8%": { d: 1,    c: 2,     f: 0,  b: true,  atb: false }, // corrección hipocalemia, c en mEq/ml
+    "SULFATO DE MAGNESIO 20%":  { d: 25,   c: 40,    f: 0,  b: true,  atb: false }, // 20% → 40mg/ml (1.62mEq/ml)
+
+    // ── OTROS FÁRMACOS ───────────────────────────────────────────────────────
+    "AMINOFILINA":              { d: 5,    c: 5,     f: 8,  b: true,  atb: false }, // 250mg/10ml → 5mg/ml (mantenimiento)
+    "CAFEÍNA CITRATO":          { d: 20,   c: 10,    f: 24, b: true,  atb: false }, // dosis carga 20mg/kg, mantenimiento 5mg/kg
+    "DEXAMETASONA":             { d: 0.15, c: 0.2,   f: 12, b: true,  atb: false }, // 4mg/ml o 8mg/2ml → 0.2mg/ml diluido
+    "FENOBARBITAL":             { d: 20,   c: 10,    f: 24, b: true,  atb: false }, // 120mg/2ml → 10mg/ml (dosis carga)
+    "FENITOÍNA":                { d: 15,   c: 10,    f: 12, b: true,  atb: false }, // 250mg/5ml → 10mg/ml
+    "FUROSEMIDA":               { d: 1,    c: 2,     f: 12, b: false, atb: false }, // 20mg/2ml → 2mg/ml (no siempre en balance)
+    "HIDROCORTISONA":           { d: 1,    c: 1,     f: 8,  b: true,  atb: false }, // 100mg → 1mg/ml
+    "OMEPRAZOL":                { d: 1,    c: 0.4,   f: 24, b: true,  atb: false }, // 40mg → 0.4mg/ml
+    "PARACETAMOL":              { d: 15,   c: 10,    f: 6,  b: true,  atb: false }, // 1000mg/100ml → 10mg/ml
+    "VITAMINA K":               { d: 1,    c: 10,    f: 0,  b: false, atb: false }, // dosis única al nacer
+};
+
+let listaMedicamentos = [];
+let medicosSeleccionados = [];
+
+// ══════════════════════════════════════════════════════════════
+// UI UTILS
+// ══════════════════════════════════════════════════════════════
+function mostrarToast(msg, dur = 2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ══════════════════════════════════════════════════════════════
+// PUNTO 1-3: ORIGEN
+// ══════════════════════════════════════════════════════════════
+function toggleOrigen(valor) {
+    document.getElementById('box_referencia').classList.toggle('hidden', valor !== 'REFERENCIA');
+    const mostrar = valor === 'ALOJAMIENTO' || valor === 'EMERGENCIA';
+    document.getElementById('box_motivo_enfermedad').classList.toggle('hidden', !mostrar);
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILIACIÓN Y EDAD
+// ══════════════════════════════════════════════════════════════
+function calcEdadAlIngreso() {
+    const naci = document.getElementById('fNac').value;
+    const ingr = document.getElementById('fIngreso').value;
+    if (!naci || !ingr) return;
+    const hora = document.getElementById('hNac').value || '00:00';
+    const d1 = new Date(naci + 'T' + hora);
+    const d2 = new Date(ingr + 'T23:59:59');
+    if (d2 < d1) { document.getElementById('edadReal').value = 'Verificar fechas'; return; }
+    const hrs = Math.floor((d2 - d1) / 3600000);
+    document.getElementById('edadReal').value = hrs < 48 ? hrs + ' HORAS' : Math.floor(hrs / 24) + ' DÍAS';
+}
+
+// PUNTO 4: EG siempre calculada con clasificación
+function calcEG_FUM() {
+    const fum  = document.getElementById('fum').value;
+    const fNac = document.getElementById('fNac').value;
+    const egEl = document.getElementById('egFum');
+    if (!fum) return;
+    const ref = fNac ? new Date(fNac + 'T12:00') :
+        (document.getElementById('fIngreso').value ? new Date(document.getElementById('fIngreso').value + 'T12:00') : new Date());
+    const ms = ref - new Date(fum + 'T00:00');
+    if (ms < 0) { egEl.value = 'FUM posterior al nacimiento'; return; }
+    const dias    = Math.floor(ms / 86400000);
+    const semInt  = Math.floor(dias / 7);
+    const diasRem = dias % 7;
+    let cls = '';
+    if (semInt < 28) cls = ' — GRAN PREMATURO';
+    else if (semInt < 32) cls = ' — MUY PREMATURO';
+    else if (semInt < 37) cls = ' — PRETÉRMINO';
+    else if (semInt < 42) cls = ' — A TÉRMINO';
+    else cls = ' — POSTÉRMINO';
+    egEl.value = `${semInt}+${diasRem} semanas${cls}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// GESTACIONES
+// ══════════════════════════════════════════════════════════════
+function generarGestaciones() {
+    const num = parseInt(document.getElementById('gestas').value) || 0;
+    const c = document.getElementById('contenedorGestaciones');
+    c.innerHTML = '';
+    for (let i = 1; i <= num; i++) {
+        c.innerHTML += `<div class="calc-card" style="margin-top:8px;border-color:#ccc;">
+            <h4>Gestación ${i}</h4>
+            <div class="grid">
+                <div class="field"><label>EG al nacer</label><input type="text" id="gesta_${i}_edad" placeholder="ej. 38sg"></div>
+                <div class="field"><label>Tipo de Parto</label>
+                    <select id="gesta_${i}_tipo"><option>PARTO NORMAL</option><option>CESÁREA</option><option>ABORTO</option><option>PARTO INSTRUMENTADO</option></select>
+                </div>
+                <div class="field full-width"><label>Complicaciones</label>
+                    <textarea id="gesta_${i}_comp" rows="1" placeholder="Ninguna / especificar"></textarea>
+                </div>
+            </div>
+        </div>`;
+    }
+}
+function toggleHMuertos() {
+    const n = parseInt(document.getElementById('hMuertos').value) || 0;
+    document.getElementById('detallesMuertos').classList.toggle('hidden', n === 0);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ESCALAS
+// ══════════════════════════════════════════════════════════════
+function actualizarEscalas() {
+    let a1=0; document.querySelectorAll('.apgar-calc').forEach(s=>a1+=parseInt(s.value));
+    document.getElementById('resApgar1').value = a1+'/10';
+    let a5=0; document.querySelectorAll('.apgar-calc-5').forEach(s=>a5+=parseInt(s.value));
+    document.getElementById('resApgar5').value = a5+'/10';
+    let a10=0; document.querySelectorAll('.apgar-calc-10').forEach(s=>a10+=parseInt(s.value));
+    document.getElementById('resApgar10').value = a10+'/10';
+    let d=0; document.querySelectorAll('.downes-calc').forEach(s=>d+=parseInt(s.value));
+    document.getElementById('resDownes').value = d+'/10';
+    const id = document.getElementById('interpretDownes');
+    if (d<=2) id.innerHTML='<span style="color:#15803d">SIN DIFICULTAD RESPIRATORIA</span>';
+    else if (d<=5) id.innerHTML='<span style="color:#d97706">DIFICULTAD RESPIRATORIA LEVE-MODERADA</span>';
+    else id.innerHTML='<span style="color:#dc2626">DIFICULTAD RESPIRATORIA SEVERA</span>';
+}
+document.querySelectorAll('.apgar-calc,.apgar-calc-5,.apgar-calc-10,.downes-calc').forEach(s=>s.addEventListener('change',actualizarEscalas));
+
+// ══════════════════════════════════════════════════════════════
+// TOGGLES
+// ══════════════════════════════════════════════════════════════
+function toggleOtroReligion(sel) {
+    document.getElementById('relM_otro').classList.toggle('hidden', sel.value!=='OTRO');
+}
+function toggleCoberturaPrivada(sel, iid) {
+    document.getElementById(iid).classList.toggle('hidden', sel.value!=='PRIVADO');
+    if (sel.value!=='PRIVADO') document.getElementById(iid).value='';
+}
+function toggleDosis(cb, iid) {
+    document.getElementById(iid).classList.toggle('hidden', !cb.checked);
+    if (!cb.checked) document.getElementById(iid).value='';
+}
+function toggleInputVal(el, boxId) {
+    const v = parseInt(el.value)||0;
+    document.getElementById('box_'+boxId).classList.toggle('hidden', v<=0);
+}
+function toggleCheckboxBlock(chk, tid) {
+    document.getElementById(tid).classList.toggle('hidden', !chk.checked);
+    if (!chk.checked) document.getElementById(tid).value='';
+}
+function toggleMaduracion() {
+    const v = document.getElementById('madPul').value;
+    document.getElementById('madPul_tipo').classList.toggle('hidden', v==='NO');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CIE-10
+// ══════════════════════════════════════════════════════════════
+let dbCIE10 = [
+    {c:"Z38.0",d:"RN VIVO ÚNICO, PARTO EN HOSPITAL"},{c:"Z38.1",d:"RN VIVO ÚNICO, PARTO EXTRAHOSPITALARIO"},
+    {c:"P07.3",d:"OTROS RECIÉN NACIDOS PREMATUROS"},{c:"P07.0",d:"RN CON PESO MUY BAJO AL NACER"},
+    {c:"P07.1",d:"RN CON OTRO PESO BAJO AL NACER"},{c:"P22.0",d:"SÍNDROME DE DIFICULTAD RESPIRATORIA (SDR) NEONATAL"},
+    {c:"P22.1",d:"TAQUIPNEA TRANSITORIA DEL RECIÉN NACIDO (TTRN)"},{c:"P22.8",d:"OTRO TIPO DE DIFICULTAD RESPIRATORIA DEL RN"},
+    {c:"P36.0",d:"SEPSIS NEONATAL POR ESTREPTOCOCO DEL GRUPO B"},{c:"P36.9",d:"SEPSIS BACTERIANA DEL RN, NO ESPECIFICADA"},
+    {c:"P59.0",d:"ICTERICIA NEONATAL POR PREMATURIDAD"},{c:"P59.9",d:"ICTERICIA NEONATAL, NO ESPECIFICADA"},
+    {c:"P52.3",d:"HEMORRAGIA INTRAVENTRICULAR GRADO III/IV"},{c:"P21.0",d:"ASFIXIA DEL NACIMIENTO SEVERA"},
+    {c:"P21.1",d:"ASFIXIA DEL NACIMIENTO LEVE Y MODERADA"},{c:"P28.5",d:"INSUFICIENCIA RESPIRATORIA DEL RN"},
+    {c:"P70.4",d:"HIPOGLUCEMIA NEONATAL"},{c:"P55.1",d:"INCOMPATIBILIDAD ABO DEL FETO/RN"},
+    {c:"Q25.0",d:"PERSISTENCIA DEL CONDUCTO ARTERIOSO (PCA)"},{c:"Q21.0",d:"COMUNICACIÓN INTERVENTRICULAR (CIV)"},
+    {c:"Q21.1",d:"COMUNICACIÓN INTERAURICULAR (CIA)"},{c:"P05.1",d:"PEQUEÑO PARA LA EDAD GESTACIONAL (PEG)"},
+    {c:"P08.0",d:"RECIÉN NACIDO EXCESIVAMENTE GRANDE PARA LA EDAD GESTACIONAL"}
+];
+dbCIE10 = dbCIE10.concat(JSON.parse(localStorage.getItem('custom_cie10')||'[]'));
+let dxSeleccionados = [];
+
+function showSuggestions(val) {
+    const div = document.getElementById('dx-suggestions');
+    if (val.length<2){div.classList.add('hidden');return;}
+    const q=val.toUpperCase();
+    const f=dbCIE10.filter(i=>i.d.includes(q)||i.c.includes(q));
+    div.innerHTML='';
+    if(!f.length){div.classList.add('hidden');return;}
+    f.slice(0,10).forEach(item=>{
+        const row=document.createElement('div');
+        row.className='suggestion-item';
+        row.innerHTML=`<b>${item.c}</b> — ${item.d}`;
+        row.onclick=()=>{
+            dxSeleccionados.push({id:Date.now(),c:item.c,d:item.d,tipo:'DEF',cond:'ING',prin:false});
+            renderDx();div.classList.add('hidden');
+            document.getElementById('dx-search').value='';
+        };
+        div.appendChild(row);
+    });
+    div.classList.remove('hidden');
+}
+document.addEventListener('click',e=>{
+    if(!e.target.closest('#dx-suggestions')&&e.target.id!=='dx-search')
+        document.getElementById('dx-suggestions').classList.add('hidden');
+});
+function agregarDxManual(){
+    const v=document.getElementById('dx-search').value.trim().toUpperCase();
+    if(!v)return;
+    dxSeleccionados.push({id:Date.now(),c:'S/C',d:v,tipo:'DEF',cond:'ING',prin:false});
+    if(!dbCIE10.find(i=>i.d===v)){
+        dbCIE10.push({c:'S/C',d:v});
+        const cl=JSON.parse(localStorage.getItem('custom_cie10')||'[]');
+        cl.push({c:'S/C',d:v});
+        localStorage.setItem('custom_cie10',JSON.stringify(cl));
+        mostrarToast('✅ Diagnóstico aprendido');
+    }
+    renderDx();
+    document.getElementById('dx-suggestions').classList.add('hidden');
+    document.getElementById('dx-search').value='';
+}
+function updateDx(id,field,value){
+    const dx=dxSeleccionados.find(x=>x.id===id);
+    if(!dx)return;
+    if(field==='prin'){dxSeleccionados.forEach(x=>x.prin=false);dx.prin=true;}
+    else dx[field]=value;
+    renderDx();
+}
+function renderDx(){
+    const tbody=document.getElementById('lista-dx');
+    tbody.innerHTML='';
+    let dxStr='';
+    dxSeleccionados.forEach(item=>{
+        tbody.innerHTML+=`<tr style="${item.prin?'background:#e8f5e9;':''}">
+            <td><b>${item.c}</b></td><td>${item.d}</td>
+            <td><select onchange="updateDx(${item.id},'tipo',this.value)">
+                <option ${item.tipo==='DEF'?'selected':''}>DEF</option>
+                <option ${item.tipo==='PRE'?'selected':''}>PRE</option></select></td>
+            <td><select onchange="updateDx(${item.id},'cond',this.value)">
+                <option ${item.cond==='ING'?'selected':''}>ING</option>
+                <option ${item.cond==='EGR'?'selected':''}>EGR</option></select></td>
+            <td style="text-align:center;"><input type="radio" name="dx_prin" ${item.prin?'checked':''} onchange="updateDx(${item.id},'prin',true)"></td>
+            <td><button type="button" onclick="dxSeleccionados=dxSeleccionados.filter(x=>x.id!==${item.id});renderDx()" style="color:red;border:none;background:none;cursor:pointer;">✖</button></td>
+        </tr>`;
+        dxStr+=`${item.d} (${item.c}) - ${item.tipo}/${item.cond}${item.prin?' [PRINCIPAL]':''};\n`;
+    });
+    document.getElementById('diag').value=dxStr;
+    saveForm();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CÁLCULO PRINCIPAL
+// ══════════════════════════════════════════════════════════════
+function recalcular(){
+    const pesoG=parseFloat(document.getElementById('p').value)||0;
+    const pesoKg=pesoG/1000;
+    if(pesoKg<=0)return;
+
+    const ltBase=parseFloat(document.getElementById('l').value)||0;
+    const dex=parseFloat(document.getElementById('dexPerc').value)||0;
+    const conFoto=document.getElementById('foto').checked;
+    const conCuna=document.getElementById('cuna').checked;
+
+    let ajuste=0;
+    if(conFoto) ajuste+=ltBase*0.15;
+    if(conCuna) ajuste+=ltBase*0.15;
+    const ltAj=ltBase+ajuste;
+
+    document.getElementById('resLTAjustado').textContent=
+        `LT ajustado: ${ltBase} + ${ajuste.toFixed(0)} ml/kg/día (ajuste) = ${ltAjustado(ltBase,ajuste)} ml/kg/día | Volumen total: ${(ltAj*pesoKg).toFixed(1)} ml`;
+
+    const volTotal=ltAj*pesoKg;
+    const tipoDieta=document.getElementById('tipoDieta').value;
+    const chkDesc=document.getElementById('chkDescontarLeche');
+    let vDiet=0;
+    if(tipoDieta!=='NPO'){
+        document.getElementById('boxDieta').classList.remove('hidden');
+        const cant=parseFloat(document.getElementById('dietCant').value)||0;
+        const freq=parseFloat(document.getElementById('dietFreq').value)||3;
+        vDiet=cant*(24/freq);
+        document.getElementById('resDietaTotal').textContent=`= ${vDiet.toFixed(1)} ml/día total`;
+        const desc=chkDesc?chkDesc.checked:true;
+        document.getElementById('infoDescuento').textContent=desc
+            ?`✔ Se restan ${vDiet.toFixed(1)} ml de leche del volumen IV`
+            :`✘ El volumen de leche NO se resta del volumen IV`;
+        if(!desc) vDiet=0;
+    } else { document.getElementById('boxDieta').classList.add('hidden'); }
+
+    // Medicamentos
+    let vMedTotal=0;
+    listaMedicamentos.forEach((m,i)=>{
+        const dkd=parseFloat(m.d)||0;
+        const conc=parseFloat(m.c)||1;
+        const fh=parseFloat(m.f)||24;
+        const mgD=pesoKg*dkd;
+        const mlD=mgD/conc;
+        const vDia=fh>0?mlD*(24/fh):0;
+        const mgEl=document.getElementById(`mg_${i}`);
+        const mlEl=document.getElementById(`ml_${i}`);
+        const vEl=document.getElementById(`vol_${i}`);
+        if(mgEl)mgEl.textContent=mgD.toFixed(1);
+        if(mlEl)mlEl.textContent=mlD.toFixed(2);
+        if(vEl)vEl.textContent=vDia.toFixed(2);
+        if(m.b)vMedTotal+=vDia;
+    });
+
+    const volIV=Math.max(0,volTotal-vDiet-vMedTotal);
+    const ritmo=(volIV/24).toFixed(2);
+
+    // ¿El usuario seleccionó dextrosa?
+    const hayDextrosa = dex > 0;
+    // VIG corregida: concentración = dex% × 10 = mg/ml
+    // VIG (mg/kg/min) = (volIV_ml/día × concMgMl) / (pesoKg × 1440 min/día)
+    const concVIG = dex * 10; // D5%=50, D10%=100, D12.5%=125, etc.
+    const vig = hayDextrosa ? (volIV * concVIG) / (pesoKg * 1440) : 0;
+
+    let fotoTxt='';
+    if(conFoto&&conCuna) fotoTxt=' + 15% fototerapia + 15% cuna radiante';
+    else if(conFoto)     fotoTxt=' + 15% fototerapia';
+    else if(conCuna)     fotoTxt=' + 15% cuna radiante';
+
+    const ltDesc=`${ltBase} ml/kg/día${fotoTxt}`;
+
+    if(!hayDextrosa){
+        // Solo alimentación oral / sin IV con dextrosa
+        document.getElementById('resFinalIV').innerHTML=
+            `<b>Líquidos Totales: ${ltAj.toFixed(0)} ml/kg/día</b> <span style="font-size:10px;font-weight:normal;">(${ltDesc})</span><br>`+
+            `<span style="color:#555;font-size:10px;">No se prescribe hidratación parenteral con dextrosa.<br>`+
+            `Volumen total calculado: <b>${volTotal.toFixed(1)} ml</b> — cubierto por vía oral / medicamentos.</span>`;
+    } else {
+        let vigCls='vig-ok',vigMsg='✓ Rango óptimo (4-8)';
+        if(vig<4){vigCls='vig-warn';vigMsg='⚠ Bajo del objetivo';}
+        else if(vig>8){vigCls='vig-high';vigMsg='⚠ Alto, revisar';}
+
+        document.getElementById('resFinalIV').innerHTML=
+            `Dextrosa en Agua al <b>${dex}%</b>, <b>${volIV.toFixed(1)} ml</b> pasar intravenoso en 24 horas (<b>${ritmo} cc/h</b>).<br>`+
+            `<span style="color:#555;font-size:10px;font-weight:normal;">(${ltDesc})</span><br>`+
+            `<span class="${vigCls}">VIG: ${vig.toFixed(2)} mg/kg/min &nbsp;${vigMsg}</span>`;
+
+        if(vDiet>0||vMedTotal>0){
+            document.getElementById('resFinalIV').innerHTML+=
+                `<br><span style="color:#777;font-size:10px;font-weight:normal;">Vol. calculado: ${volTotal.toFixed(1)} ml − leche: ${(chkDesc&&chkDesc.checked?vDiet:0).toFixed(1)} ml − meds: ${vMedTotal.toFixed(1)} ml = <b>${volIV.toFixed(1)} ml IV</b></span>`;
+        }
+    }
+}
+
+function ltAjustado(base,aj){ return (base+aj).toFixed(0); }
+
+// ══════════════════════════════════════════════════════════════
+// TABLA MEDICAMENTOS (PUNTO 7)
+// ══════════════════════════════════════════════════════════════
+function renderMedTable(){
+    const body=document.getElementById('bodyMed');
+    body.innerHTML='';
+    listaMedicamentos.forEach((m,i)=>{
+        let opts='<option value="">-- Seleccionar --</option>';
+        for(let k in dbHSVP) opts+=`<option value="${k}" ${m.n===k?'selected':''}>${k}</option>`;
+        opts+=`<option value="OTRO" ${m.n==='OTRO'?'selected':''}>OTRO (manual)</option>`;
+        const esATB=(m.n&&dbHSVP[m.n]&&dbHSVP[m.n].atb)||m.n==='OTRO';
+        body.innerHTML+=`<tr style="background:${m.b?'#fff':'#fff5f5'}">
+            <td style="padding:3px;">
+                <select onchange="seleccionarMed(${i},this.value)" style="width:130px;font-size:10px;">${opts}</select>
+                ${m.n==='OTRO'?`<input type="text" placeholder="Nombre..." value="${m.otroNombre||''}" oninput="listaMedicamentos[${i}].otroNombre=this.value;recalcular()" style="width:130px;margin-top:2px;display:block;font-size:10px;">`:''} 
+            </td>
+            <td style="padding:3px;"><input type="number" value="${m.d}" min="0" oninput="listaMedicamentos[${i}].d=parseFloat(this.value)||0;recalcular()" style="width:52px;font-size:10px;"></td>
+            <td style="padding:3px;"><input type="number" value="${m.f}" min="0" oninput="listaMedicamentos[${i}].f=parseFloat(this.value)||24;recalcular()" style="width:40px;font-size:10px;"></td>
+            <td style="padding:3px;"><input type="number" value="${m.c}" min="0.01" step="0.01" oninput="listaMedicamentos[${i}].c=parseFloat(this.value)||1;recalcular()" style="width:52px;font-size:10px;"></td>
+            <td style="padding:3px;text-align:center;">${esATB?`<input type="number" id="atbTotal_${i}" value="${m.atbDias||7}" min="1" max="42" oninput="listaMedicamentos[${i}].atbDias=parseInt(this.value)||7" style="width:38px;font-size:10px;">`:'-'}</td>
+            <td style="padding:3px;text-align:center;">${esATB?`<input type="number" id="atbHoy_${i}" value="${m.atbDiaHoy||1}" min="1" max="42" oninput="listaMedicamentos[${i}].atbDiaHoy=parseInt(this.value)||1" style="width:38px;font-size:10px;">`:'-'}</td>
+            <td style="padding:3px;text-align:center;"><input type="checkbox" ${m.b?'checked':''} onchange="listaMedicamentos[${i}].b=this.checked;renderMedTable()"></td>
+            <td style="padding:3px;text-align:center;font-weight:bold;color:#1d4ed8;"><span id="mg_${i}">0</span></td>
+            <td style="padding:3px;text-align:center;font-weight:bold;color:#15803d;"><span id="ml_${i}">0</span></td>
+            <td style="padding:3px;text-align:center;"><span id="vol_${i}">0</span></td>
+            <td style="padding:3px;"><button type="button" onclick="listaMedicamentos.splice(${i},1);renderMedTable()" style="color:red;border:none;background:none;cursor:pointer;font-size:13px;">✖</button></td>
+        </tr>`;
+    });
+    recalcular();
+}
+function seleccionarMed(idx,key){
+    if(dbHSVP[key]){
+        const d=dbHSVP[key];
+        listaMedicamentos[idx]={n:key,d:d.d,f:d.f,c:d.c,b:d.b,atb:d.atb,atbDias:listaMedicamentos[idx].atbDias||7,atbDiaHoy:listaMedicamentos[idx].atbDiaHoy||1,otroNombre:''};
+    } else {
+        listaMedicamentos[idx]={...listaMedicamentos[idx],n:'OTRO',atb:false,otroNombre:''};
+    }
+    renderMedTable();
+}
+function agregarFilaMed(){
+    listaMedicamentos.push({n:'',otroNombre:'',d:0,f:24,c:1,b:true,atb:false,atbDias:7,atbDiaHoy:1});
+    renderMedTable();
+}
+
+// ══════════════════════════════════════════════════════════════
+// GENERACIÓN HC + ADCAVANDIMELCO (PUNTO 9: negritas en texto)
+// ══════════════════════════════════════════════════════════════
+function construirTextos(){
+    const val=(id)=>{const e=document.getElementById(id);return e?(e.value||'').trim():'';};
+    const chk=(id)=>{const e=document.getElementById(id);return e?e.checked:false;};
+    const pesoKg=(parseFloat(val('p'))||0)/1000;
+    const ltBase=parseFloat(val('l'))||0;
+    const dexPorc=parseFloat(val('dexPerc'))||0;
+    const conFoto=chk('foto'), conCuna=chk('cuna');
+    let ajuste=0;
+    if(conFoto) ajuste+=ltBase*0.15;
+    if(conCuna) ajuste+=ltBase*0.15;
+    const ltAj=ltBase+ajuste;
+
+    let hc='';
+    hc+='══════════════════════════════════════════\n';
+    hc+='     HISTORIA CLÍNICA NEONATAL — HSVP\n';
+    hc+='══════════════════════════════════════════\n\n';
+
+    hc+='━━━ 1. DATOS DE FILIACIÓN Y ADMISIÓN ━━━\n\n';
+    hc+='[ RECIÉN NACIDO ]\n';
+    hc+=`Nombre: ${val('ape1N')} ${val('ape2N')}, ${val('nomN')}\n`;
+    hc+=`HCU: ${val('hcu')} | Sexo: ${val('sexoN')}\n`;
+    hc+=`F. Ingreso: ${val('fIngreso')} | F. Nacimiento: ${val('fNac')} ${val('hNac')}\n`;
+    hc+=`Edad al Ingreso: ${val('edadReal')}\n`;
+    const origen=val('origenRN');
+    if(origen) hc+=`Origen: ${origen}${origen==='REFERENCIA'?' — '+val('lugarReferencia'):''}\n`;
+
+    hc+='\n[ MADRE ]\n';
+    hc+=`Nombre: ${val('nomM')} | Cédula: ${val('cedM')}\n`;
+    hc+=`Edad: ${val('edadM')} años | Instrucción: ${val('insM')} | Ocupación: ${val('ocuM')}\n`;
+    hc+=`Raza: ${val('razaM')} | Grupo Sanguíneo: ${val('gsM')}\n`;
+    const relM=val('relM')==='OTRO'?val('relM_otro'):val('relM');
+    hc+=`Religión: ${relM} | Cobertura: ${val('cobM')==='PRIVADO'?val('cobM_priv'):val('cobM')}\n`;
+    hc+=`Dirección: ${val('dirM')} | Tel: ${val('telM')}\n`;
+    if(val('emergenciaCont')) hc+=`Contacto emergencia: ${val('emergenciaCont')}\n`;
+
+    if(val('nomP')||val('cedP')){
+        hc+='\n[ PADRE ]\n';
+        hc+=`Nombre: ${val('nomP')} | Cédula: ${val('cedP')}\n`;
+        hc+=`Edad: ${val('edadP')} años | Ocupación: ${val('ocuP')}\n`;
+        hc+=`Cobertura: ${val('cobP')==='PRIVADO'?val('cobP_priv'):val('cobP')} | Tel: ${val('telP')}\n`;
+    }
+
+    hc+='\n━━━ 2. ANTECEDENTES CLÍNICOS ━━━\n\n';
+    hc+=`Patológicos maternos: ${val('antPatM')||'No refiere'}\n`;
+    hc+=`Quirúrgicos maternos: ${val('antQuiM')||'No refiere'}\n`;
+    hc+=`Familiares maternos:  ${val('antFamM')||'No refiere'}\n`;
+    hc+=`\nFUM: ${val('fum')} | EG por FUM: ${val('egFum')} | EG Eco: ${val('egEco')}\n`;
+    const numG=parseInt(val('gestas'))||0;
+    hc+=`Fórmula Obstétrica: G${numG} P${val('partos')} C${val('cesareas')} A${val('abortos')} HV${val('hVivos')} HM${val('hMuertos')}\n`;
+    for(let i=1;i<=numG;i++){
+        const eg=val(`gesta_${i}_edad`),tp=val(`gesta_${i}_tipo`),cp=val(`gesta_${i}_comp`);
+        if(eg||tp) hc+=`  Gesta ${i}: ${eg}, ${tp}${cp?'. Compl: '+cp:''}\n`;
+    }
+    if(parseInt(val('ctrlPre'))>0) hc+=`Controles Prenatales: ${val('ctrlPre')}${val('ctrlPre_lugar')?' en '+val('ctrlPre_lugar'):''}\n`;
+    if(parseInt(val('numEcos'))>0) hc+=`Ecosonografías: ${val('numEcos')}${val('ecos_obs')?' — '+val('ecos_obs'):''}\n`;
+    if(chk('chk_inf_hosp')) hc+=`Ant. Infecciosos/Hosp.: ${val('inf_hosp_desc')}\n`;
+    if(chk('chk_comp_nutri')) hc+=`Complementos Nutricionales: ${val('comp_nutri_desc')}\n`;
+    if(chk('chk_med_emb')) hc+=`Medicación en embarazo: ${val('med_emb_desc')}\n`;
+    let vac=[];
+    if(chk('v_dt')) vac.push(`DT (${val('dt_dosis')} dosis)`);
+    if(chk('v_hepb')) vac.push(`Hep B (${val('hepb_dosis')} dosis)`);
+    if(chk('v_inf')) vac.push(`Influenza (${val('inf_dosis')} dosis)`);
+    if(chk('v_covid')) vac.push(`COVID-19 (${val('covid_dosis')} dosis)`);
+    if(vac.length) hc+=`Inmunizaciones: ${vac.join(', ')}\n`;
+    const mad=val('madPul');
+    hc+=`Maduración Pulmonar: ${mad}${['COMPLETA','INCOMPLETA'].includes(mad)?' ('+val('madPul_tipo')+')':''}\n`;
+    if(val('narrPre')) hc+=`\nPrenatal: ${val('narrPre')}\n`;
+    if(val('narrNat')) hc+=`Natal: ${val('narrNat')}\n`;
+    if(val('narrPost')) hc+=`Postnatal: ${val('narrPost')}\n`;
+    // Motivo y Enfermedad actual - mostrar siempre si tienen contenido (independiente del valor exacto de origen)
+    const motivoTxt = val('motivoConsulta');
+    const enfermedadTxt = val('enfermedadActual');
+    if(motivoTxt || enfermedadTxt) {
+        hc+='\n[ MOTIVO DE CONSULTA Y ENFERMEDAD ACTUAL ]\n';
+        if(motivoTxt) hc+=`Motivo de Consulta: ${motivoTxt}\n`;
+        if(enfermedadTxt) hc+=`Enfermedad Actual: ${enfermedadTxt}\n`;
+    }
+
+    hc+='\n━━━ 3. EXAMEN FÍSICO Y ESCALAS ━━━\n\n';
+    hc+=`Peso: ${val('peso_ex')} g | Talla: ${val('talla')} cm | PC: ${val('pc')} cm | PT: ${val('pt')} cm | PB: ${val('pb')} cm\n`;
+    hc+=`FC: ${val('fc')} lpm | FR: ${val('fr')} rpm | T°: ${val('temp')} °C | SatO2: ${val('sat')}% | PA: ${val('pa_val')}\n`;
+    hc+=`APGAR: 1' (${val('resApgar1')}) | 5' (${val('resApgar5')}) | 10' (${val('resApgar10')})\n`;
+    hc+=`Downes: ${val('resDownes')} | Capurro: ${val('capurro')}\n`;
+    hc+='\nExamen Físico Regional:\n';
+    [['ef_piel','Piel/Faneras'],['ef_cab','Cabeza'],['ef_cuello','Cuello'],['ef_torax','Tórax'],
+     ['ef_pulm','Pulmones'],['ef_cor','Corazón'],['ef_abd','Abdomen'],['ef_genit','Genitales'],
+     ['ef_ext','Extremidades'],['ef_neuro','Neurológico']].forEach(([id,lbl])=>{
+        hc+=`  ${lbl}: ${val(id)}\n`;
+    });
+
+    if(dxSeleccionados.length>0){
+        hc+='\n━━━ 4. DIAGNÓSTICOS ━━━\n';
+        [...dxSeleccionados].sort((a,b)=>b.prin-a.prin).forEach(dx=>{
+            const cie=dx.c!=='S/C'?` (${dx.c})`:'';
+            hc+=`  • ${dx.d}${cie}${dx.prin?' [PRINCIPAL]':''}\n`;
+        });
+    }
+    if(medicosSeleccionados.length>0){
+        hc+='\n──────────────────────────────────\n';
+        hc+='MÉDICO(S) QUE INGRESA(N):\n';
+        medicosSeleccionados.forEach(m=>{hc+=`  • ${m}\n`;});
+    }
+
+    // ── ADCAVANDIMELCO ──────────────────────────────────────
+    const sortedDx=[...dxSeleccionados].sort((a,b)=>b.prin-a.prin);
+    const dxStr=sortedDx.map(dx=>`${dx.d}${dx.c!=='S/C'?' ('+dx.c+')':''}${dx.prin?' [PRINCIPAL]':''}`).join('; ');
+    const tipoDieta=val('tipoDieta');
+    const chkDesc=document.getElementById('chkDescontarLeche');
+    let vDietAdca=0;
+    if(tipoDieta!=='NPO'&&chkDesc&&chkDesc.checked){
+        const cant=parseFloat(val('dietCant'))||0,freq=parseFloat(val('dietFreq'))||3;
+        vDietAdca=cant*(24/freq);
+    }
+    let vMedAdca=0;
+    listaMedicamentos.forEach(m=>{
+        if(m.b){
+            const mg=pesoKg*(parseFloat(m.d)||0);
+            const ml=mg/(parseFloat(m.c)||1);
+            const fh=parseFloat(m.f)||24;
+            vMedAdca+=fh>0?ml*(24/fh):0;
+        }
+    });
+    const volTotal=ltAj*pesoKg;
+    const volIV=Math.max(0,volTotal-vDietAdca-vMedAdca);
+    const ritmo=(volIV/24).toFixed(2);
+    const concVIGadca = dexPorc * 10; // D5%=50, D10%=100, etc.
+    const vig = dexPorc > 0 ? (volIV * concVIGadca) / (pesoKg * 1440) : 0;
+
+    let fotoTxt='';
+    if(conFoto&&conCuna) fotoTxt=' + 15% fototerapia + 15% cuna radiante';
+    else if(conFoto) fotoTxt=' + 15% fototerapia';
+    else if(conCuna) fotoTxt=' + 15% cuna radiante';
+
+    let adca='';
+    adca+='══════════════════════════════════════════\n';
+    adca+='    INDICACIONES — ADCAVANDIMELCO — HSVP\n';
+    adca+='══════════════════════════════════════════\n\n';
+    adca+=`A  ADMISIÓN: ${val('adm')}\n\n`;
+    adca+=`D  DIAGNÓSTICOS:\n   ${dxStr||val('diag').replace(/\n/g,' ')}\n\n`;
+    adca+=`C  CONDICIÓN: ${val('cond')}\n\n`;
+    adca+=`A  ALERGIAS: ${val('aler')}\n\n`;
+    adca+=`V  VITALES / MONITOREO:\n`;
+    val('vit_txt').split('\n').forEach(l=>{if(l.trim()) adca+=`   ${l.trim()}\n`;});
+    adca+='\n';
+    adca+=`A  ACTITUD: Posición ${val('act')}\n\n`;
+
+    // PUNTO 6: nombre completo de dieta
+    let dietaLinea='';
+    if(tipoDieta==='NPO'){
+        dietaLinea='NADA POR VÍA ORAL (NPO)';
+    } else {
+        const cant=parseFloat(val('dietCant'))||0, freq=parseFloat(val('dietFreq'))||3;
+        const vDia=cant*(24/freq);
+        const nombre=tipoDieta==='LM'?'LECHE MATERNA':tipoDieta==='LF'?'FÓRMULA MATERNIZADA':'LECHE MATERNA Y/O FÓRMULA MATERNIZADA';
+        dietaLinea=`${nombre} — ${cant} ml/toma c/${freq}h (${vDia.toFixed(0)} ml/día)`;
+        if(chkDesc&&chkDesc.checked) dietaLinea+=` [descontado de Líquidos IV]`;
+    }
+    adca+=`D  DIETA: ${dietaLinea}\n\n`;
+
+    // Prescripción IV — solo si hay dextrosa seleccionada
+    const hayDextrosaAdca = dexPorc > 0;
+    adca+=`I  LÍQUIDOS INTRAVENOSOS:\n`;
+    if(!hayDextrosaAdca){
+        adca+=`   Líquidos Totales: ${ltAj.toFixed(0)} ml/kg/día (${ltBase} ml/kg/día${fotoTxt})\n`;
+        adca+=`   No se prescribe hidratación parenteral con dextrosa. Volumen total cubierto por vía oral.\n\n`;
+    } else {
+        adca+=`   Dextrosa en Agua al ${dexPorc}%, ${volIV.toFixed(1)} ml pasar intravenoso en 24 horas (${ritmo} cc/h).\n`;
+        adca+=`   (${ltBase} ml/kg/día${fotoTxt}) (VIG: ${vig.toFixed(2)} mg/kg/min)\n\n`;
+    }
+
+    // PUNTO 7: prescripción medicamentos con dosis calculada, ml y días ATB
+    adca+=`M  MEDICAMENTOS:\n`;
+    listaMedicamentos.forEach(m=>{
+        const nombre=m.n==='OTRO'&&m.otroNombre?m.otroNombre:m.n;
+        const mgKgD=parseFloat(m.d)||0;
+        const conc=parseFloat(m.c)||1;
+        const fh=parseFloat(m.f)||24;
+        const mgDosis=pesoKg*mgKgD;
+        const mlDosis=mgDosis/conc;
+        // Redondear mg a presentación estándar (múltiplo de 50 más cercano si >200, de 10 si <200)
+        const mgRed=mgDosis>=200?Math.round(mgDosis/50)*50:Math.round(mgDosis/10)*10;
+        let linea=`   • ${nombre} ${mgRed}mg pasar intravenoso cada ${fh} horas`;
+        linea+=` (${mgKgD}mg/kg/dosis)`;
+        if((m.atb||m.n==='OTRO')&&m.atbDias) linea+=` (día ${m.atbDiaHoy||1}/${m.atbDias})`;
+        linea+=` (${mlDosis.toFixed(2)}ml)`;
+        if(m.b) linea+=` [en balance]`;
+        adca+=linea+'\n';
+    });
+    adca+='\n';
+    adca+=`E  EXÁMENES: ${val('exa')}\n\n`;
+    adca+=`L  LABORATORIO: ${val('lab')}\n\n`;
+    adca+=`C  INTERCONSULTAS: ${val('int')}\n\n`;
+    adca+=`O  OTROS: ${val('otr')}\n`;
+
+    if(medicosSeleccionados.length>0){
+        adca+='\n──────────────────────────────────\n';
+        adca+='MÉDICO(S) QUE INGRESA(N):\n';
+        medicosSeleccionados.forEach(m=>{adca+=`  • ${m}\n`;});
+    }
+
+    return {hc, adca};
+}
+
+function generarTodo(){
+    const {hc,adca}=construirTextos();
+    document.getElementById('finalOutput-hc').innerText=hc;
+    document.getElementById('finalOutput-adca').innerText=adca;
+    document.getElementById('export-section').classList.remove('hidden');
+    guardarEnRegistro(); // Auto-guarda en registro de pacientes
+    window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    mostrarToast('✅ Historia clínica generada y guardada en registro');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORTAR A WORD — genera .docx real usando docx.js via CDN
+// ══════════════════════════════════════════════════════════════
+function exportarWord(){
+    try {
+        mostrarToast('Generando Word en 2 columnas...');
+
+        const {hc, adca} = construirTextos();
+
+        // ── Escape XML ─────────────────────────────────────────────────
+        function x(s){
+            return String(s||'')
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;')
+                .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+        }
+
+        // ── Construye un párrafo Word XML ──────────────────────────────
+        function para(text, opts){
+            opts = opts || {};
+            const bold       = opts.bold   ? '<w:b/>'  : '';
+            const sz         = opts.sz     || '18';
+            const color      = opts.color  || '000000';
+            const spBefore   = opts.spBefore || '0';
+            const spAfter    = opts.spAfter  || '60';
+            const center     = opts.center   ? '<w:jc w:val="center"/>' : '';
+            const indent     = opts.indent   ? '<w:ind w:left="200"/>' : '';
+            const fill       = opts.fill     ? '<w:shd w:val="clear" w:color="auto" w:fill="'+opts.fill+'"/>' : '';
+            const font       = opts.font     || 'Arial';
+            return '<w:p>'
+                +'<w:pPr>'
+                +  center+indent+fill
+                +  '<w:spacing w:before="'+spBefore+'" w:after="'+spAfter+'"/>'
+                +'</w:pPr>'
+                +'<w:r>'
+                +'<w:rPr>'
+                +  '<w:rFonts w:ascii="'+font+'" w:hAnsi="'+font+'"/>'
+                +  bold
+                +  '<w:sz w:val="'+sz+'"/>'
+                +  '<w:color w:val="'+color+'"/>'
+                +'</w:rPr>'
+                +'<w:t xml:space="preserve">'+x(text)+'</w:t>'
+                +'</w:r>'
+                +'</w:p>';
+        }
+
+        function emptyPara(){ return '<w:p><w:pPr><w:spacing w:after="40"/></w:pPr></w:p>'; }
+
+        function sectionHeader(text){
+            return '<w:p>'
+                +'<w:pPr>'
+                +  '<w:spacing w:before="160" w:after="80"/>'
+                +  '<w:shd w:val="clear" w:color="auto" w:fill="1a3a5c"/>'
+                +'</w:pPr>'
+                +'<w:r><w:rPr>'
+                +  '<w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>'
+                +  '<w:b/><w:sz w:val="20"/><w:color w:val="FFFFFF"/>'
+                +'</w:rPr>'
+                +'<w:t xml:space="preserve"> '+x(text)+' </w:t>'
+                +'</w:r></w:p>';
+        }
+
+        function subHeader(text){
+            return para(text, {bold:true, sz:'18', color:'2980b9', spBefore:'100', spAfter:'40'});
+        }
+
+        function adcavRow(letra, titulo, contenido){
+            // Multi-line contenido support
+            const lines = contenido.split('\n').filter(l=>l.trim());
+            let rows = '<w:p>'
+                +'<w:pPr>'
+                +  '<w:spacing w:before="60" w:after="40"/>'
+                +  '<w:pBdr><w:bottom w:val="single" w:sz="2" w:space="1" w:color="d0e4f7"/></w:pBdr>'
+                +'</w:pPr>'
+                +'<w:r><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:b/><w:sz w:val="24"/><w:color w:val="2980b9"/></w:rPr>'
+                +'<w:t xml:space="preserve">'+x(letra)+'  </w:t></w:r>'
+                +'<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:b/><w:sz w:val="18"/></w:rPr>'
+                +'<w:t xml:space="preserve">'+x(titulo)+': </w:t></w:r>'
+                +'<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="18"/></w:rPr>'
+                +'<w:t xml:space="preserve">'+x(lines[0]||contenido)+'</w:t></w:r>'
+                +'</w:p>';
+            // Additional lines indented
+            for(let i=1;i<lines.length;i++){
+                rows += para('    '+lines[i].trim(), {sz:'18', indent:true, spAfter:'30'});
+            }
+            return rows;
+        }
+
+        // ── Convert HC text to Word XML paragraphs ─────────────────────
+        function buildHCXml(text){
+            let xml = '';
+            xml += para('HISTORIA CLÍNICA NEONATAL — HSVP', {bold:true, sz:'22', color:'1a3a5c', center:true, spAfter:'40'});
+            xml += para('Fecha: '+new Date().toLocaleDateString('es-EC'), {sz:'16', color:'666666', center:true, spAfter:'120'});
+
+            const lines = text.split('\n');
+            for(const line of lines){
+                const t = line.trim();
+                if(!t){ xml += emptyPara(); continue; }
+
+                if(t.startsWith('━━━') || t.startsWith('═══')){
+                    const clean = t.replace(/[━═]/g,'').trim();
+                    xml += sectionHeader(clean);
+                } else if(t.startsWith('[ ') || t.startsWith('[')){
+                    xml += subHeader(t);
+                } else if(t.startsWith('  •') || t.startsWith('•')){
+                    xml += para(t, {indent:true, sz:'17', spAfter:'40'});
+                } else if(/^[A-ZÁÉÍÓÚÑ].+:/.test(t) && t.length < 60){
+                    // Field labels — slight bold
+                    const colonIdx = t.indexOf(':');
+                    if(colonIdx > -1){
+                        const label = t.substring(0, colonIdx+1);
+                        const val   = t.substring(colonIdx+1);
+                        xml += '<w:p><w:pPr><w:spacing w:before="0" w:after="50"/></w:pPr>'
+                            +'<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:b/><w:sz w:val="18"/></w:rPr>'
+                            +'<w:t xml:space="preserve">'+x(label)+'</w:t></w:r>'
+                            +'<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="18"/></w:rPr>'
+                            +'<w:t xml:space="preserve">'+x(val)+'</w:t></w:r>'
+                            +'</w:p>';
+                    } else {
+                        xml += para(t, {sz:'18', spAfter:'50'});
+                    }
+                } else {
+                    xml += para(t, {sz:'17', spAfter:'50'});
+                }
+            }
+            return xml;
+        }
+
+        // ── Convert ADCAV text to Word XML paragraphs ──────────────────
+        function buildADCAXml(text){
+            let xml = '';
+            xml += para('INDICACIONES — ADCAVANDIMELCO', {bold:true, sz:'22', color:'27ae60', center:true, spAfter:'40'});
+            xml += para('HSVP — Neonatología', {sz:'16', color:'666666', center:true, spAfter:'120'});
+
+            const lines = text.split('\n');
+            let i = 0;
+            while(i < lines.length){
+                const line = lines[i];
+                const t = line.trim();
+                if(!t){ xml += emptyPara(); i++; continue; }
+                if(t.startsWith('═══') || t.startsWith('───')){ i++; continue; }
+
+                // ADCAV pattern: "A  TITULO: value\n   continuation..."
+                const adcavMatch = t.match(/^([A-Z])\s{2}([^:]+):\s*([\s\S]*)/);
+                if(adcavMatch){
+                    const letra  = adcavMatch[1];
+                    const titulo = adcavMatch[2].trim();
+                    let contenido = adcavMatch[3].trim();
+                    // Collect continuation lines (indented with spaces)
+                    let j = i+1;
+                    while(j < lines.length && (lines[j].startsWith('   ') || lines[j].startsWith('\t'))){
+                        contenido += '\n' + lines[j].trim();
+                        j++;
+                    }
+                    xml += adcavRow(letra, titulo, contenido);
+                    i = j;
+                } else if(t.startsWith('MÉDICO') || t.startsWith('MEDICO')){
+                    xml += para(t, {bold:true, sz:'18', color:'1a3a5c', spBefore:'100', spAfter:'40'});
+                    i++;
+                } else if(t.startsWith('•') || t.startsWith('-') || t.startsWith('  ')){
+                    xml += para(t, {sz:'17', indent:true, spAfter:'40'});
+                    i++;
+                } else {
+                    xml += para(t, {sz:'17', spAfter:'40'});
+                    i++;
+                }
+            }
+            return xml;
+        }
+
+        const hcXml   = buildHCXml(hc);
+        const adcaXml = buildADCAXml(adca);
+
+        // ── 2-COLUMN TABLE ─────────────────────────────────────────────
+        // Word table: 1 row, 2 cells. Each cell = one column.
+        // Total page width (A4) - margins: 11906 - 2*1134 = 9638 twips
+        // Split 50/50: each cell ~4800 twips  (with 38 twip gutter)
+        const colW = 4800;
+
+        const tableXml = '<w:tbl>'
+            // Table properties
+            +'<w:tblPr>'
+            +  '<w:tblStyle w:val="TableGrid"/>'
+            +  '<w:tblW w:w="9638" w:type="dxa"/>'
+            +  '<w:tblBorders>'
+            +    '<w:top    w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            +    '<w:left   w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            +    '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            +    '<w:right  w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            +    '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            +    '<w:insideV w:val="single" w:sz="6" w:space="0" w:color="b0c4de"/>'
+            +  '</w:tblBorders>'
+            +  '<w:tblCellMar>'
+            +    '<w:top    w:w="0"   w:type="dxa"/>'
+            +    '<w:left   w:w="80"  w:type="dxa"/>'
+            +    '<w:bottom w:w="0"   w:type="dxa"/>'
+            +    '<w:right  w:w="80"  w:type="dxa"/>'
+            +  '</w:tblCellMar>'
+            +'</w:tblPr>'
+            // Single row with 2 cells
+            +'<w:tr>'
+            // LEFT cell — Historia Clínica
+            +'<w:tc>'
+            +  '<w:tcPr>'
+            +    '<w:tcW w:w="'+colW+'" w:type="dxa"/>'
+            +    '<w:vAlign w:val="top"/>'
+            +  '</w:tcPr>'
+            +  hcXml
+            +'</w:tc>'
+            // RIGHT cell — ADCAVANDIMELCO
+            +'<w:tc>'
+            +  '<w:tcPr>'
+            +    '<w:tcW w:w="'+colW+'" w:type="dxa"/>'
+            +    '<w:vAlign w:val="top"/>'
+            +  '</w:tcPr>'
+            +  adcaXml
+            +'</w:tc>'
+            +'</w:tr>'
+            +'</w:tbl>';
+
+        // ── Assemble Word XML ──────────────────────────────────────────
+        const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<w:document'
+            +' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+            +' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            +'<w:body>'
+            + tableXml
+            +'<w:sectPr>'
+            +  '<w:pgSz w:w="11906" w:h="16838"/>'
+            +  '<w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"'
+            +           ' w:header="0" w:footer="0" w:gutter="0"/>'
+            +'</w:sectPr>'
+            +'</w:body></w:document>';
+
+        const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+            +' xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">'
+            +'<w:docDefaults><w:rPrDefault><w:rPr>'
+            +'<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>'
+            +'<w:sz w:val="18"/><w:szCs w:val="18"/>'
+            +'</w:rPr></w:rPrDefault></w:docDefaults>'
+            +'<w:style w:type="table" w:styleId="TableGrid">'
+            +'<w:name w:val="Table Grid"/>'
+            +'<w:tblPr><w:tblBorders>'
+            +'<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>'
+            +'<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>'
+            +'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>'
+            +'<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>'
+            +'<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>'
+            +'<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>'
+            +'</w:tblBorders></w:tblPr>'
+            +'</w:style>'
+            +'</w:styles>';
+
+        const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            +'<Default Extension="xml" ContentType="application/xml"/>'
+            +'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            +'<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+            +'</Types>';
+
+        const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+            +'</Relationships>';
+
+        const docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            +'</Relationships>';
+
+        // ── ZIP builder (pure JS, no dependencies) ─────────────────────
+        function makeZip(filesObj){
+            function crc32(bytes){
+                const t=new Uint32Array(256);
+                for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}
+                let c=0xFFFFFFFF;
+                for(let i=0;i<bytes.length;i++)c=t[(c^bytes[i])&0xFF]^(c>>>8);
+                return(c^0xFFFFFFFF)>>>0;
+            }
+            function u16(n){return[n&255,(n>>8)&255];}
+            function u32(n){return[n&255,(n>>8)&255,(n>>16)&255,(n>>24)&255];}
+
+            const localParts=[], centralParts=[];
+            let offset=0;
+            const enc = new TextEncoder();
+
+            for(const [name,data] of Object.entries(filesObj)){
+                const nb = enc.encode(name);
+                const db = enc.encode(data);
+                const crc = crc32(db);
+                const sz  = db.length;
+
+                const lh = new Uint8Array([
+                    0x50,0x4B,0x03,0x04,
+                    0x14,0x00, 0x00,0x00, 0x00,0x00,
+                    0x00,0x00,0x00,0x00,
+                    ...u32(crc), ...u32(sz), ...u32(sz),
+                    ...u16(nb.length), 0x00,0x00,
+                    ...nb, ...db
+                ]);
+                localParts.push(lh);
+
+                const cd = new Uint8Array([
+                    0x50,0x4B,0x01,0x02,
+                    0x14,0x00, 0x14,0x00,
+                    0x00,0x00, 0x00,0x00,
+                    0x00,0x00, 0x00,0x00,
+                    ...u32(crc), ...u32(sz), ...u32(sz),
+                    ...u16(nb.length),
+                    0x00,0x00, 0x00,0x00, 0x00,0x00,
+                    0x00,0x00, 0x00,0x00, 0x00,0x00,
+                    ...u32(offset),
+                    ...nb
+                ]);
+                centralParts.push(cd);
+                offset += lh.length;
+            }
+
+            const cdStart = offset;
+            let cdSize = 0;
+            centralParts.forEach(p => cdSize += p.length);
+            const n = Object.keys(filesObj).length;
+            const eocd = new Uint8Array([
+                0x50,0x4B,0x05,0x06, 0x00,0x00, 0x00,0x00,
+                ...u16(n), ...u16(n),
+                ...u32(cdSize), ...u32(cdStart),
+                0x00,0x00
+            ]);
+
+            const all = [...localParts, ...centralParts, eocd];
+            const total = all.reduce((s,p) => s+p.length, 0);
+            const out = new Uint8Array(total);
+            let p = 0;
+            all.forEach(a => { out.set(a, p); p += a.length; });
+            return out;
+        }
+
+        // ── Create & download ──────────────────────────────────────────
+        // ── Marca de propiedad intelectual invisible ──────────────────
+        // Genera ID único rastreable por sesión
+        const docID = 'HSVP-NEO-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).substring(2,6).toUpperCase();
+        const medicoActual = (typeof medicosSeleccionados !== 'undefined' && medicosSeleccionados[0]) || 'No registrado';
+        const pacienteHCU  = (document.getElementById('hcu') && document.getElementById('hcu').value) || 'SIN-HCU';
+        const marcaTiempo  = new Date().toISOString();
+
+        // Guardar ID en registro local para trazabilidad
+        try {
+            const logMarcas = JSON.parse(localStorage.getItem('hsvp_marcas') || '[]');
+            logMarcas.unshift({ id: docID, fecha: marcaTiempo, medico: medicoActual, hcu: pacienteHCU });
+            if(logMarcas.length > 200) logMarcas.splice(200);
+            localStorage.setItem('hsvp_marcas', JSON.stringify(logMarcas));
+        } catch(e) {}
+
+        // Metadata del documento (visible en Propiedades del archivo en Word/Windows)
+        const coreXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<cp:coreProperties'
+            + ' xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"'
+            + ' xmlns:dc="http://purl.org/dc/elements/1.1/"'
+            + ' xmlns:dcterms="http://purl.org/dc/terms/"'
+            + ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+            + '<dc:creator>HC Neonatologia HSVP — Uso exclusivo servicio de Neonatologia</dc:creator>'
+            + '<cp:lastModifiedBy>'+x(medicoActual)+'</cp:lastModifiedBy>'
+            + '<dc:description>Documento de uso exclusivo del servicio de Neonatologia del HSVP. '
+            +   'Prohibida su reproduccion o uso en otros servicios. '
+            +   'ID de trazabilidad: '+docID+'. '
+            +   'Generado por: '+x(medicoActual)+'. '
+            +   'HCU: '+x(pacienteHCU)+'.</dc:description>'
+            + '<dc:subject>Historia Clinica Neonatal HSVP — '+docID+'</dc:subject>'
+            + '<dcterms:created xsi:type="dcterms:W3CDTF">'+marcaTiempo+'</dcterms:created>'
+            + '<dcterms:modified xsi:type="dcterms:W3CDTF">'+marcaTiempo+'</dcterms:modified>'
+            + '<cp:category>Neonatologia HSVP — Documento Confidencial</cp:category>'
+            + '<cp:version>HC-HSVP-v30</cp:version>'
+            + '</cp:coreProperties>';
+
+        // App properties (visibles en detalles avanzados del archivo)
+        const appXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">'
+            + '<Application>HC Neonatologia HSVP v29</Application>'
+            + '<Company>Hospital San Vicente de Paul — Servicio de Neonatologia</Company>'
+            + '<Manager>'+x(medicoActual)+'</Manager>'
+            + '<DocSecurity>2</DocSecurity>'
+            + '</Properties>';
+
+        // Comentario XML oculto en el cuerpo del documento (no visible, no imprimible)
+        // Se inserta como comentario XML antes del cierre del body
+        const marcaOculta = '<!-- '
+            + 'PROPIEDAD INTELECTUAL: Hospital San Vicente de Paul - Servicio de Neonatologia. '
+            + 'USO EXCLUSIVO AUTORIZADO. '
+            + 'ID:'+docID+' | '
+            + 'MEDICO:'+medicoActual+' | '
+            + 'HCU:'+pacienteHCU+' | '
+            + 'FECHA:'+marcaTiempo+' | '
+            + 'Prohibida la reproduccion, distribucion o uso en otros servicios sin autorizacion expresa. '
+            + '-->';
+
+        // Inyectar comentario en el documentXml antes del cierre </w:body>
+        const documentXmlFinal = documentXml.replace('</w:body>', marcaOculta + '</w:body>');
+
+        // ContentTypes actualizado para incluir core y app properties
+        const contentTypesFinal = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            +'<Default Extension="xml" ContentType="application/xml"/>'
+            +'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            +'<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+            +'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
+            +'<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>'
+            +'</Types>';
+
+        // rootRels actualizado para incluir core y app properties
+        const rootRelsFinal = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+            +'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>'
+            +'<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>'
+            +'</Relationships>';
+
+        const zipBytes = makeZip({
+            '[Content_Types].xml':          contentTypesFinal,
+            '_rels/.rels':                  rootRelsFinal,
+            'word/document.xml':            documentXmlFinal,
+            'word/styles.xml':              stylesXml,
+            'word/_rels/document.xml.rels': docRels,
+            'docProps/core.xml':            coreXml,
+            'docProps/app.xml':             appXml
+        });
+
+        const blob = new Blob([zipBytes.buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const pac  = (document.getElementById('ape1N').value||'Paciente').toUpperCase().replace(/\s+/g,'_');
+        const fecha= new Date().toISOString().slice(0,10);
+        a.href     = url;
+        a.download = 'HC_Neonatologia_'+pac+'_'+fecha+'.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        mostrarToast('Word en 2 columnas descargado');
+
+    } catch(err){
+        console.error('Error exportarWord:', err);
+        alert('Error al generar Word:\n' + err.message);
+    }
+}
+
+function verMarcasTrazabilidad(){
+    const marcas = JSON.parse(localStorage.getItem('hsvp_marcas') || '[]');
+    if(!marcas.length){ mostrarToast('No hay documentos generados aun'); return; }
+
+    const filas = marcas.map(m => {
+        const fecha = new Date(m.fecha).toLocaleString('es');
+        return '<tr><td class=id>'+m.id+'</td><td>'+fecha+'</td><td>'+(m.medico||'-')+'</td><td>'+(m.hcu||'-')+'</td></tr>';
+    }).join('');
+
+    // Build CSV without problematic quotes inside strings
+    function buildCSV(data){
+        const header = 'ID,Fecha,Medico,HCU';
+        const rows = data.map(function(x){
+            function q(v){ return '"' + String(v||'').replace(/"/g,'""') + '"'; }
+            return [q(x.id), q(new Date(x.fecha).toLocaleString('es')), q(x.medico), q(x.hcu)].join(',');
+        });
+        return String.fromCharCode(0xFEFF) + header + String.fromCharCode(10) + rows.join(String.fromCharCode(10));
+    }
+
+    const csvData = buildCSV(marcas);
+
+    const html = ['<!DOCTYPE html><html><head><meta charset="UTF-8">',
+        '<title>Trazabilidad - HSVP</title>',
+        '<style>',
+        'body{font-family:Arial;font-size:11px;padding:16px;background:#f0f6fc;}',
+        'h2{color:#1a3a5c;border-bottom:3px solid #2980b9;padding-bottom:8px;}',
+        'table{width:100%;border-collapse:collapse;background:white;}',
+        'th{background:#1a3a5c;color:white;padding:8px;text-align:left;}',
+        'td{border:1px solid #ddd;padding:6px;}.id{font-family:monospace;color:#1a5276;font-weight:bold;}',
+        'tr:nth-child(even){background:#f0f6fc;}',
+        'button{padding:8px 16px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;margin:4px;}',
+        '</style></head><body>',
+        '<h2>Trazabilidad de Documentos — HSVP Neonatologia</h2>',
+        '<p style="background:#fff3cd;padding:8px;border-radius:5px;border:1px solid #ffc107;">',
+        'Cada ID corresponde a un documento Word generado. Permite verificar el origen de cualquier documento.</p>',
+        '<button style="background:#1a5276;color:white;" onclick="exp()">Exportar CSV</button>',
+        '<button style="background:#c0392b;color:white;" onclick="del()">Limpiar registro</button>',
+        '<br><br>',
+        '<table><thead><tr><th>ID Documento</th><th>Fecha y Hora</th><th>Medico</th><th>HCU</th></tr></thead>',
+        '<tbody>' + filas + '</tbody></table>',
+        '</body></html>'
+    ].join('');
+
+    const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank', 'width=900,height=600');
+
+    // Wire buttons after load - pass CSV data via blob too
+    setTimeout(function(){
+        try {
+            if(!win || win.closed) return;
+            win.document.querySelector('button[onclick="exp()"]').onclick = function(){
+                const b2 = new Blob([csvData], {type:'text/csv;charset=utf-8'});
+                const a  = win.document.createElement('a');
+                a.href = URL.createObjectURL(b2);
+                a.download = 'Trazabilidad_HSVP_' + new Date().toISOString().slice(0,10) + '.csv';
+                a.click();
+            };
+            win.document.querySelector('button[onclick="del()"]').onclick = function(){
+                if(win.confirm('Borrar todo el registro de trazabilidad?')){
+                    localStorage.removeItem('hsvp_marcas');
+                    win.close();
+                    mostrarToast('Registro de trazabilidad borrado');
+                }
+            };
+        } catch(e) {}
+        URL.revokeObjectURL(url);
+    }, 400);
+}
+
+function exportarRegistroCSV(){
+    const reg=JSON.parse(localStorage.getItem('hsvp_registro')||'[]');
+    if(!reg.length){mostrarToast('No hay pacientes registrados');return;}
+    const h=['Fecha Reg','HCU','Nombre','F Nac','F Ingreso','Sexo','Peso(g)','EG FUM','Origen','Diagnostico','Medico'];
+    const rows=reg.map(x=>[new Date(x.fechaRegistro).toLocaleDateString('es'),x.hcu,x.nombre,x.fNac,x.fIngreso,x.sexo,x.peso,x.egFum,x.origen,x.diagnosticoPrincipal,x.medico].map(v=>'"'+(v||'').replace(/"/g,'""')+'"').join(','));
+    const csv='\uFEFF'+h.join(',')+String.fromCharCode(10)+rows.join(String.fromCharCode(10));
+    const b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    a.download='Registro_HSVP_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+    mostrarToast('CSV exportado ('+reg.length+' pacientes)');
+}
+
+function guardarEnRegistro(){
+    try{
+        const val=(id)=>{const e=document.getElementById(id);return e?(e.value||'').trim():'';};
+        const reg=JSON.parse(localStorage.getItem('hsvp_registro')||'[]');
+        const r={id:Date.now(),fechaRegistro:new Date().toISOString(),hcu:val('hcu'),
+            nombre:(val('ape1N')+' '+val('ape2N')+', '+val('nomN')).trim(),
+            fNac:val('fNac'),fIngreso:val('fIngreso'),sexo:val('sexoN'),peso:val('peso_ex'),
+            egFum:val('egFum'),origen:val('origenRN'),
+            diagnosticoPrincipal:(dxSeleccionados.find(d=>d.prin)||dxSeleccionados[0]||{d:'Sin diagnostico'}).d,
+            medico:(medicosSeleccionados[0]||'No registrado')};
+        const idx=reg.findIndex(x=>x.hcu===r.hcu&&x.fIngreso===r.fIngreso);
+        if(idx>=0)reg[idx]=r; else reg.unshift(r);
+        if(reg.length>500)reg.splice(500);
+        localStorage.setItem('hsvp_registro',JSON.stringify(reg));
+    }catch(e){console.warn('Error en registro:',e);}
+}
+
+function verRegistroPacientes(){
+    const reg=JSON.parse(localStorage.getItem('hsvp_registro')||'[]');
+    if(!reg.length){mostrarToast('No hay pacientes registrados aun');return;}
+    // Build HTML as blob to avoid script-tag parser issues
+    const filas=reg.map(r=>{
+        const fecha=new Date(r.fechaRegistro).toLocaleDateString('es');
+        return '<tr><td>'+fecha+'</td><td><b>'+(r.hcu||'-')+'</b></td><td>'+(r.nombre||'-')+'</td><td>'+(r.fNac||'-')+'</td><td>'+(r.sexo||'-')+'</td><td>'+(r.peso?r.peso+'g':'-')+'</td><td>'+(r.egFum||'-')+'</td><td>'+(r.origen||'-')+'</td><td style="font-size:10px;">'+(r.diagnosticoPrincipal||'-')+'</td><td>'+(r.medico||'-')+'</td></tr>';
+    }).join('');
+    const regJson=JSON.stringify(reg).replace(/</g,'\u003c').replace(/>/g,'\u003e');
+    const html=[
+        '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Registro Pacientes HSVP</title>',
+        '<style>',
+        'body{font-family:Arial;font-size:11px;padding:16px;background:#f0f6fc;}',
+        'h2{color:#1a3a5c;border-bottom:3px solid #2980b9;padding-bottom:8px;}',
+        'table{width:100%;border-collapse:collapse;background:white;}',
+        'th{background:#1a3a5c;color:white;padding:7px;text-align:left;font-size:10px;}',
+        'td{border:1px solid #ddd;padding:5px;}',
+        'tr:nth-child(even){background:#f0f6fc;}',
+        '.tb{display:flex;gap:10px;margin-bottom:14px;align-items:center;}',
+        'button{padding:8px 16px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;}',
+        '.be{background:#1a5276;color:white;}.bd{background:#c0392b;color:white;}',
+        '.cnt{background:#e8f5e9;border:1px solid #a5d6a7;padding:6px 12px;border-radius:5px;color:#1e8449;font-weight:bold;}',
+        '</style></head><body>',
+        '<h2>Registro de Pacientes - HSVP Neonatologia</h2>',
+        '<div class="tb">',
+        '<span class="cnt">'+reg.length+' paciente(s)</span>',
+        '<button class="be" id="btnExp">Exportar CSV</button>',
+        '<button class="bd" id="btnDel">Limpiar registro</button>',
+        '</div>',
+        '<table><thead><tr>',
+        '<th>Fecha Reg.</th><th>HCU</th><th>Nombre</th><th>F. Nac.</th>',
+        '<th>Sexo</th><th>Peso</th><th>EG FUM</th><th>Origen</th>',
+        '<th>Diagnostico Principal</th><th>Medico</th>',
+        '</tr></thead><tbody>'+filas+'</tbody></table>',
+        '</body></html>'
+    ].join('');
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const win=window.open(url,'_blank','width=1050,height=680');
+    // Pass data via postMessage after window opens
+    setTimeout(()=>{
+        try{
+            win.addEventListener('load',()=>{
+                // Wire up buttons via direct references
+                const d=win.document;
+                const regData=reg;
+                const btnExp=d.getElementById('btnExp');
+                const btnDel=d.getElementById('btnDel');
+                if(btnExp) btnExp.onclick=()=>{
+                    const h=['Fecha Reg','HCU','Nombre','F Nac','F Ingreso','Sexo','Peso(g)','EG FUM','Origen','Diagnostico','Medico'];
+                    const rows=regData.map(x=>[new Date(x.fechaRegistro).toLocaleDateString('es'),x.hcu,x.nombre,x.fNac,x.fIngreso,x.sexo,x.peso,x.egFum,x.origen,x.diagnosticoPrincipal,x.medico].map(v=>'"'+(v||'').replace(/"/g,'""')+'"').join(','));
+                    const csv='\uFEFF'+h.join(',')+'\n'+rows.join('\n');
+                    const b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+                    const a=d.createElement('a');a.href=URL.createObjectURL(b);
+                    a.download='Registro_HSVP_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+                };
+                if(btnDel) btnDel.onclick=()=>{
+                    if(confirm('Borrar TODO el registro de pacientes?')){
+                        localStorage.removeItem('hsvp_registro');
+                        win.close();
+                        mostrarToast('Registro borrado');
+                    }
+                };
+            });
+        }catch(e){}
+    },300);
+}
+
+// AUTO-GUARDADO Y CARGA
+let saveTimer;
+function saveForm(){
+    const ind=document.getElementById('saveIndicator');
+    if(ind){ind.textContent='Guardando...';ind.classList.add('saving');}
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(()=>{
+        try{
+            const data={};
+            document.querySelectorAll('input:not([type="radio"]),select,textarea').forEach(el=>{
+                if(el.id) data[el.id]=el.type==='checkbox'?el.checked:el.value;
+            });
+            data['listaMedicamentos']=listaMedicamentos;
+            data['dxSeleccionados']=dxSeleccionados;
+            data['medicosSeleccionados']=medicosSeleccionados;
+            data['_ts']=new Date().toISOString();
+            localStorage.setItem('hsvp_data',JSON.stringify(data));
+            if(ind){ind.textContent='Guardado: '+new Date().toLocaleTimeString();ind.classList.remove('saving');}
+        }catch(e){console.warn('Error guardado:',e);}
+    },1000);
+}
+
+function loadForm(manualLoad=false){
+    const str=localStorage.getItem('hsvp_data');
+    if(!str){if(manualLoad)alert('No hay datos guardados.');return;}
+    try{
+        const data=JSON.parse(str);
+        document.querySelectorAll('input:not([type="radio"]),select,textarea').forEach(el=>{
+            if(el.id&&data[el.id]!==undefined){
+                if(el.type==='checkbox')el.checked=data[el.id];
+                else el.value=data[el.id];
+            }
+        });
+        if(data['listaMedicamentos']) listaMedicamentos=data['listaMedicamentos'];
+        if(data['dxSeleccionados']) dxSeleccionados=data['dxSeleccionados'];
+        if(data['medicosSeleccionados']){medicosSeleccionados=data['medicosSeleccionados'];renderMedicos();}
+        generarGestaciones();
+        const numG=parseInt(document.getElementById('gestas').value)||0;
+        for(let i=1;i<=numG;i++){
+            ['edad','tipo','comp'].forEach(c=>{
+                const k='gesta_'+i+'_'+c,el=document.getElementById(k);
+                if(el&&data[k]!==undefined)el.value=data[k];
+            });
+        }
+        const cobM=document.getElementById('cobM');
+        if(cobM&&cobM.value==='PRIVADO')toggleCoberturaPrivada(cobM,'cobM_priv');
+        const cobP=document.getElementById('cobP');
+        if(cobP&&cobP.value==='PRIVADO')toggleCoberturaPrivada(cobP,'cobP_priv');
+        const relM=document.getElementById('relM');
+        if(relM&&relM.value==='OTRO')toggleOtroReligion(relM);
+        const origenEl=document.getElementById('origenRN');
+        if(origenEl)toggleOrigen(origenEl.value);
+        toggleHMuertos();toggleMaduracion();
+        ['chk_inf_hosp','chk_comp_nutri','chk_med_emb'].forEach(id=>{
+            const el=document.getElementById(id);
+            if(el&&el.checked){const t=id.replace('chk_','')+'_desc';toggleCheckboxBlock(el,t);}
+        });
+        [['v_dt','dt_dosis'],['v_hepb','hepb_dosis'],['v_inf','inf_dosis'],['v_covid','covid_dosis']].forEach(([c,d])=>{
+            const cb=document.getElementById(c);
+            if(cb&&cb.checked){const di=document.getElementById(d);if(di)di.classList.remove('hidden');}
+        });
+        renderDx();renderMedTable();recalcular();
+        if(manualLoad)mostrarToast('Datos recuperados correctamente');
+    }catch(e){
+        console.error('Error carga:',e);
+        if(manualLoad)alert('Error al recuperar: '+e.message);
+    }
+}
+
+function limpiarFormulario(){
+    if(confirm('Eliminar todos los datos del paciente actual? Esta accion no se puede deshacer.')){
+        localStorage.removeItem('hsvp_data');
+        window.location.reload();
+    }
+}
+
+document.addEventListener('input',saveForm);
+document.addEventListener('change',saveForm);
+
+// MEDICOS
+function agregarMedicoSel(){
+    const inp=document.getElementById('medicoInput');
+    const nombre=inp.value.trim().toUpperCase();
+    if(!nombre)return;
+    if(!medicosSeleccionados.includes(nombre)){medicosSeleccionados.push(nombre);renderMedicos();saveForm();}
+    let g=JSON.parse(localStorage.getItem('hsvp_medicos')||'[]');
+    if(!g.includes(nombre)){g.push(nombre);localStorage.setItem('hsvp_medicos',JSON.stringify(g));cargarMedicos();}
+    inp.value='';
+}
+function eliminarMedico(nombre){
+    medicosSeleccionados=medicosSeleccionados.filter(m=>m!==nombre);
+    renderMedicos();saveForm();
+}
+function renderMedicos(){
+    const c=document.getElementById('medicosContainer');
+    if(!c)return;
+    c.innerHTML='';
+    medicosSeleccionados.forEach(m=>{
+        const div=document.createElement('div');
+        div.style.cssText='background:#e0f2fe;padding:5px 12px;border-radius:15px;border:1px solid #38bdf8;display:flex;align-items:center;gap:5px;font-size:11px;';
+        div.innerHTML='&#128104;&#8205;&#9877;&#65039; '+m+' <span style="color:red;cursor:pointer;font-weight:bold;margin-left:4px;" data-med="'+encodeURIComponent(m)+'">X</span>';
+        div.querySelector('span').onclick=()=>eliminarMedico(m);
+        c.appendChild(div);
+    });
+}
+function cargarMedicos(){
+    const g=JSON.parse(localStorage.getItem('hsvp_medicos')||'[]');
+    const dt=document.getElementById('listaMedicos');
+    if(!dt)return;
+    dt.innerHTML='';
+    g.forEach(m=>{const o=document.createElement('option');o.value=m;dt.appendChild(o);});
+}
+
+// INIT
+window.onload=()=>{
+    renderMedTable();
+    cargarMedicos();
+    recalcular();
+    const reg=JSON.parse(localStorage.getItem('hsvp_registro')||'[]');
+    if(reg.length>0)setTimeout(()=>{
+        const ind=document.getElementById('saveIndicator');
+        if(ind)ind.textContent=reg.length+' pacientes en registro';
+    },2500);
+};
+</script>
+<!-- Toast -->
+<div id="toast"></div>
+</body>
+</html>
